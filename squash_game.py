@@ -1,4 +1,4 @@
-﻿import pyxel
+import pyxel
 
 class SquashGame:
     def __init__(self):
