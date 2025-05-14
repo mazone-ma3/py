@@ -20,7 +20,7 @@ class App:
         self.enemies = []
         self.enemy_bullets = []
         self.score = 0
-        self.game_over = True #False
+        self.game_over = True
         
         # 星の初期化（20個の星を生成）
         self.stars = [Star() for _ in range(20)]
