@@ -5,7 +5,7 @@ class SquashGame:
         # 画面サイズを設定（160x120はレトロ感に最適）
         pyxel.init(160, 120, title="Squash Game")
         # リソースファイルの読み込み（ラケットやボールのスプライト）
-        pyxel.load("squash.pyxres")
+#        pyxel.load("squash.pyxres")
         
         # プレイヤー（ラケット）の初期位置
         self.paddle_x = 70
