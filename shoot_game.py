@@ -1,4 +1,4 @@
-import pyxel
+﻿import pyxel
 from pyxel import *
 import random
 import math
