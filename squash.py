@@ -3,7 +3,7 @@
 class SquashGame:
     def __init__(self):
         # 画面サイズを設定（160x120はレトロ感に最適）
-        pyxel.init(160, 120, title="Squash Game")
+        pyxel.init(160, 120, title="SquashGame")
         # リソースファイルの読み込み（ラケットやボールのスプライト）
         pyxel.load("breakout.pyxres")
         
@@ -24,7 +24,7 @@ class SquashGame:
         self.score = 0
         
         # ゲームループ開始
-        #pyxel.run(self.update, self.draw)
+        pyxel.run(self.update, self.draw)
 
     def update(self):
         # プレイヤーの移動（左右キーでラケットを動かす）
