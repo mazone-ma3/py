@@ -24,7 +24,7 @@ class SquashGame:
         self.score = 0
         
         # ゲームループ開始
-        pyxel.run(self.update, self.draw)
+        #pyxel.run(self.update, self.draw)
 
     def update(self):
         # プレイヤーの移動（左右キーでラケットを動かす）
