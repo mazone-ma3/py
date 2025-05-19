@@ -74,4 +74,5 @@ class SquashGame:
         pyxel.text(10, 10, f"Score: {self.score}", 7)
 
 # ゲームの実行
-SquashGame()
+if __name__ == "__main__":
+    SquashGame()
