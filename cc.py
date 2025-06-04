@@ -1,5 +1,6 @@
 ﻿import pyxel
 import random
+import math
 
 class Star:
 	def __init__(self, i):
@@ -37,7 +38,7 @@ class PlayerBullet:
 #		pyxel.rect(self.x, self.y, self.w, self.h, 13)
 #		pyxel.rectb(self.x, self.y, self.w, self.h, 0)
 
-class Game:
+class App:
 	def __init__(self):
 		pyxel.init(256, 256, fps=60, title="Core Crashers")
 		pyxel.load("cc.pyxres")
@@ -155,4 +156,4 @@ class Game:
 			bullet.draw()
 
 
-Game()
+App()
