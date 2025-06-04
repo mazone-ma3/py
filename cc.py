@@ -91,7 +91,8 @@ class App:
 #		self.value = 0
 
 	def update(self):
-		if pyxel.btnp(pyxel.KEY_ESCAPE) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):
+		if pyxel.btnp(pyxel.KEY_ESCAPE):
+# or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):
 			pyxel.quit()
 
 		if self.scene == "OPENING":
@@ -176,8 +177,8 @@ class App:
 
 			# タイトル画面
 			if self.scene == "TITLE":
-				pyxel.text(100, 160, "CORE CRASHERS", 7)
-				pyxel.text(96, 200, "Press SPACE KEY", 7)
+				pyxel.text(100, 160, "Press SPACE KEY", 7)
+				pyxel.text(100, 200, "(c) ma-Zone 2025", 7)
 
 			pyxel.blt(128 - 48 - 16, 48 - 16, 0, 0, 0, 128, 64, 0)
 
