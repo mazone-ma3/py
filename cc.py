@@ -239,7 +239,7 @@ class App:
 
 			pyxel.colors[palno] =((r2) << 16) | (((g2) << 8)) | (( b2))
 
-	# データ初期化
+	# データ初期化 ############################################################
 	def initdata(self):
 		self.player_x = 128 - 16
 		self.player_y = 120 #- 16
@@ -256,6 +256,7 @@ class App:
 
 		self.stage = 0
 		self.schedule_index = 0
+		self.current_time = 0
 
 	def update(self):
 		if pyxel.btnp(pyxel.KEY_ESCAPE):
