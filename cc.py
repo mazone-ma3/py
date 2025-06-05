@@ -80,7 +80,7 @@ class App:
 		self.put_strings(9, 14, "START")
 		self.put_strings(7, 14, "EXIT")
 		self.put_strings(4, 10, "      ij k   ")
-		self.put_strings(3, 10, "a2022 bcdefgh")
+		self.put_strings(3, 10, "a2025 bcdefgh")
 		self.score_displayall()
 		self.hiscore_display()
 
