@@ -51,6 +51,12 @@ class App:
 		self.scene = "OPENING"
 		self.starnums = 64
 
+		self.str_temp = ""
+		self.score = 0
+		self.hiscore = 5000
+
+		self.my_hp = 7
+
 # pyxel.colors.from_list([0x111111, 0x222222, 0x333333]); pyxel.colors[15] = 0x112233
 
 		# 星の初期化
@@ -59,6 +65,80 @@ class App:
 
 
 		pyxel.run(self.update, self.draw)
+
+	def put_strings(self, y, x, str):
+		y = 28-y
+		chr = str.encode("UTF-8")
+		for i in range(len(str)):
+			a = chr[i]
+			if(a < 0x30):
+				a = 0x40
+			a = a - 0x30
+			pyxel.blt((x + i) * 8, y * 8, 1, (a % 16) * 8, int(a / 16) * 8, 8, 8, 0)
+
+	def put_title(self):
+		self.put_strings(9, 14, "START")
+		self.put_strings(7, 14, "EXIT")
+		self.put_strings(4, 10, "      ij k   ")
+		self.put_strings(3, 10, "a2022 bcdefgh")
+		self.score_displayall()
+		self.hiscore_display()
+
+	def put_numd(self, j, digit):
+		i = 0 #digit
+		self.str_temp = ""
+		k = 0
+		l = b""
+		while (i < digit):
+			i = i + 1
+			k = int(j / (10**(digit-i))) % 10
+			l += str(k).encode('UTF-8')
+#			self.str_temp[i] = k.decode(UTF-8)
+#			j /= 10
+#		self.str_temp[digit] = '\0';
+#		k = str(j).encode('UTF-8')
+		self.str_temp = l.decode("UTF-8")
+
+	def score_display(self):
+		self.put_numd(self.score, 8)
+		self.put_strings(28, 2 + 6, self.str_temp)
+		if(self.score >= self.hiscore):
+			if((self.score % 10) == 0):
+				self.hiscore = self.score
+				self.put_strings(28, 0, "HI")
+		else:
+			self.put_strings(28, 0, "  ")
+
+	def score_displayall(self):
+		self.put_strings(28, 2, "SCORE")
+		self.score_display()
+
+	def hiscore_display(self):
+		if(self.score > self.hiscore):
+			if((self.score % 10) == 0):
+				self.hiscore = self.score
+
+		self.put_numd(self.hiscore, 8)
+
+		self.put_strings(13, 10, "HIGH")
+		self.put_strings(13, 10 + 5, self.str_temp)
+
+	def put_my_hp_dmg(self):
+		j = 0
+		str_temp = ""
+		for i in range(self.my_hp):
+			++j
+			str_temp += '`'
+		if(self.my_hp < 10):
+			for i in range(self.my_hp, 10): #(i = my_hp; i < HP_MAX; i++)
+				++j
+				str_temp += ' '
+#				str_temp[j++] = ' ';
+#		str_temp[j] = '\0';
+
+		self.put_strings(-3, 7, str_temp);
+
+#		self.my_hp_flag = TRUE;
 
 
 	def changepal(self, value):
@@ -177,12 +257,16 @@ class App:
 
 			# タイトル画面
 			if self.scene == "TITLE":
-				pyxel.text(100, 160, "Press SPACE KEY", 7)
-				pyxel.text(100, 200, "(c) ma-Zone 2025", 7)
+#				pyxel.text(100, 160, "Press SPACE KEY", 7)
+#				pyxel.text(100, 200, "(c) ma-Zone 2025", 7)
+				self.put_title()
+				x = 1
+				self.put_strings(7 + x * 2, 11, "?")
 
 			pyxel.blt(128 - 48 - 16, 48 - 16, 0, 0, 0, 128, 64, 0)
 
 		elif self.scene == "DEMO":
+			self.score_displayall()
 
 			if(self.logox % 8):
 				pyxel.blt(128 + self.logox - 48 - 16, 48 - 16, 0, 0, 0, 128, 64, 0)
@@ -204,6 +288,11 @@ class App:
 				bullet.draw()
 
 			if self.scene == "PAUSE":
-				pyxel.text(110, 120, "PAUSE", 7)
+#				pyxel.text(110, 120, "PAUSE", 7)
+				self.put_strings(14, 13, "PAUSE")
+
+			self.put_strings(-3, 0, "SHIELD");
+			self.score_displayall()
+			self.put_my_hp_dmg()
 
 App()
