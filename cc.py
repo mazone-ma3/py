@@ -1,6 +1,8 @@
 ﻿import pyxel
 import random
 import math
+import csv
+import time
 
 class Star:
 	def __init__(self, i):
@@ -38,12 +40,21 @@ class PlayerBullet:
 #		pyxel.rect(self.x, self.y, self.w, self.h, 13)
 #		pyxel.rectb(self.x, self.y, self.w, self.h, 0)
 
-# ゲームループ
+# ゲームループ #################################################################
 
 class App:
 	def __init__(self):
 		pyxel.init(256, 256, fps=60, title="Core Crashers")
 		pyxel.load("cc.pyxres")
+
+		self.schedule = self.load_schedule('cc.csv')
+		self.schedule_index = 0
+		self.current_time = 0
+		self.message = ""
+		self.message_x = 0
+		self.message_y = 0
+		self.stage = 0
+
 		self.old_colors = pyxel.colors.to_list();
 		self.colorvalue = 255
 		self.changepal(self.colorvalue)
@@ -65,6 +76,80 @@ class App:
 
 
 		pyxel.run(self.update, self.draw)
+
+
+	# スケジュールデータを読み込む
+	def load_schedule(self, file_path):
+		schedule = []
+		with open(file_path, mode='r', encoding='utf-8') as file:
+			reader = csv.DictReader(file)
+			for row in reader:
+				schedule.append({
+#					'time': float(row['time']),
+					'event_type': row['event_type'],
+					'event_0' : row['event_0'],
+					'event_1' : row['event_1'],
+					'event_2' : row['event_2'],
+					'event_3' : row['event_3'],
+					'event_4' : row['event_4'],
+					'event_5' : row['event_5'],
+					'event_6' : row['event_6'],
+					'event_7' : row['event_7'],
+#					'details': row['details']
+				})
+		return schedule #sorted(schedule, key=lambda x: x['time'])  # 時間順にソート
+
+	# イベントを処理する関数
+	def process_event(self, event):
+#		print(f"Time: {event['time']}s, Event: {event['event_type']}, Details: {event['details']}")
+
+		message = "                 ","     WARNING     ","STAGE "
+
+		print(f"Event: {event['event_type']}, 0: {event['event_0']}, 1: {event['event_1']}, 2: {event['event_2']}, 3: {event['event_3']} ")
+
+		com = event['event_type']
+		if(com == "COM_WAITCOUNT"):
+			count = event['event_0']
+			print(f"時間待ち {count}カウント")
+			self.current_time = int(count)
+			print(self.current_time)
+
+		elif(com == "COM_TKALLDEL"):
+			print(f"敵消去待ち")
+		elif(com == "COM_TKAPPEND"):
+			print(f"敵追加")
+		elif(com == "COM_BGMCHANGE"):
+			print(f"曲変更")
+		elif(com == "COM_BGMFADEOUT"):
+			print(f"曲終了")
+		elif(com == "COM_PUTMESSAGE"):
+			a = event['event_2'].encode("UTF-8")
+			x = int(event['event_0'])
+			y = int(event['event_1'])
+			b = int(event['event_2'])
+			print(f"メッセージ X={x} Y={y} {message[int(b)]}")
+			self.message_x = x
+			self.message_y = y
+			self.message = message[int(b)]
+		elif(com == "COM_STAGEADD"):
+			self.stage = self.stage + 1
+			x = int(event['event_0'])
+			y = int(event['event_1'])
+			self.message = message[2] + str(self.stage)
+			self.message_x = x
+			self.message_y = y
+			print(f"次のステージへ")
+		elif(com == "COM_END"):
+			self.schedule_index = -1
+			print(f"終了")
+		elif(com == "COM_SE"):
+			x = int(event['event_0'])
+			print(f"SE再生 {x}")
+		elif(com == "COM_BGPALFADEOUT"):
+			print(f"画面フェードアウト")
+		elif(com == "COM_JIKIMOVE"):
+			print(f"自機移動")
+
 
 	def put_strings(self, y, x, str):
 		y = 28-y
@@ -154,6 +239,7 @@ class App:
 
 			pyxel.colors[palno] =((r2) << 16) | (((g2) << 8)) | (( b2))
 
+	# データ初期化
 	def initdata(self):
 		self.player_x = 128 - 16
 		self.player_y = 120 #- 16
@@ -168,7 +254,8 @@ class App:
 		self.score = 0
 		self.game_over = True
 
-#		self.value = 0
+		self.stage = 0
+		self.schedule_index = 0
 
 	def update(self):
 		if pyxel.btnp(pyxel.KEY_ESCAPE):
@@ -241,6 +328,20 @@ class App:
 					if bullet.y < -8:
 						self.player_bullets.remove(bullet)
 
+				# スケジュール
+				if(self.current_time == 0):
+#				while self.schedule_index < len(self.schedule):
+					if self.schedule_index < len(self.schedule): #and current_time >= schedule[schedule_index]['time']:
+						self.process_event(self.schedule[self.schedule_index])
+#						++self.schedule_index
+						self.schedule_index = self.schedule_index + 1
+
+					else:
+						self.schedule_index = 0
+
+				if(self.current_time > 0):
+					self.current_time = self.current_time - 1
+#					print(self.current_time)
 
 	def draw(self):
 		pyxel.cls(0)
@@ -290,6 +391,8 @@ class App:
 			if self.scene == "PAUSE":
 #				pyxel.text(110, 120, "PAUSE", 7)
 				self.put_strings(14, 13, "PAUSE")
+
+			self.put_strings(self.message_x, self.message_y, self.message);
 
 			self.put_strings(-3, 0, "SHIELD");
 			self.score_displayall()
