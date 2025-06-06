@@ -77,10 +77,10 @@ class Enemy:
 		self.chr = chr
 		self.dmg = False
 
-	def update(self, player_x, player_y, enemy_bullets):
+	def update(self, player_x, player_y, enemy_bullets, shot_c):
 		self.y += self.speed
 		self.shoot_timer += 1
-		if self.shoot_timer >= 30:
+		if self.shoot_timer >= shot_c: #(6 << 3): #30:
 			player_center_x = player_x + 8
 			player_center_y = player_y + 8
 			enemy_center_x = self.x + 8
@@ -207,6 +207,8 @@ class App:
 			self.message_x = x
 			self.message_y = y
 			self.my_hp = 7
+			self.shot_c = self.shot_c / 2
+
 			print(f"次のステージへ")
 		elif(com == "COM_END"):
 			self.schedule_index = -1
@@ -346,6 +348,8 @@ class App:
 		self.my_hp = 7
 		self.my_dmg = False
 
+		self.shot_c = 6 << 3
+
 	def update(self):
 		if pyxel.btnp(pyxel.KEY_ESCAPE):
 # or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):
@@ -428,7 +432,7 @@ class App:
 
 				# 敵の更新
 				for enemy in self.enemies[:]:
-					enemy.update(self.player_x, self.player_y, self.enemy_bullets)
+					enemy.update(self.player_x, self.player_y, self.enemy_bullets, self.shot_c)
 					if enemy.y > 256:
 						self.enemies.remove(enemy)
 
@@ -450,12 +454,12 @@ class App:
 							self.score += 10
 							enemy.dmg = True
 
-							if(enemy.hp < 1):
+							if(enemy.hp < 3):
 								self.enemies.remove(enemy)
 								self.score += 100
+								pyxel.play(3,16,0,False,True)
 
 							self.player_bullets.remove(bullet)
-							pyxel.play(3,16,0,False,True)
 							break
 
 				# 当たり判定（プレイヤーと敵）
