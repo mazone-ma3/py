@@ -102,7 +102,7 @@ class Enemy:
 		pyxel.pal()
 		self.dmg = False
 
-# ゲームループ #################################################################
+# ゲームクラス#################################################################
 
 class App:
 	def __init__(self):
@@ -117,7 +117,7 @@ class App:
 		self.message_y = 0
 		self.stage = 0
 
-		self.old_colors = pyxel.colors.to_list();
+		self.old_colors = pyxel.colors.to_list()
 		self.colorvalue = 255
 		self.changepal(self.colorvalue)
 
@@ -221,7 +221,7 @@ class App:
 		elif(com == "COM_JIKIMOVE"):
 			print(f"自機移動")
 
-
+	# 文字列表示
 	def put_strings(self, y, x, str):
 		y = 28-y
 		chr = str.encode("UTF-8")
@@ -232,6 +232,7 @@ class App:
 			a = a - 0x30
 			pyxel.blt((x + i) * 8, y * 8, 1, (a % 16) * 8, int(a / 16) * 8, 8, 8, 0)
 
+	# タイトル表示
 	def put_title(self):
 		self.put_strings(9, 14, "START")
 		self.put_strings(7, 14, "EXIT")
@@ -240,6 +241,7 @@ class App:
 		self.score_displayall()
 		self.hiscore_display()
 
+	# 数字表示
 	def put_numd(self, j, digit):
 		i = 0 #digit
 		self.str_temp = ""
@@ -251,10 +253,11 @@ class App:
 			l += str(k).encode('UTF-8')
 #			self.str_temp[i] = k.decode(UTF-8)
 #			j /= 10
-#		self.str_temp[digit] = '\0';
+#		self.str_temp[digit] = '\0'
 #		k = str(j).encode('UTF-8')
 		self.str_temp = l.decode("UTF-8")
 
+	# スコア表示
 	def score_display(self):
 		self.put_numd(self.score, 8)
 		self.put_strings(28, 2 + 6, self.str_temp)
@@ -265,10 +268,12 @@ class App:
 		else:
 			self.put_strings(28, 0, "  ")
 
+	# スコア全表示
 	def score_displayall(self):
 		self.put_strings(28, 2, "SCORE")
 		self.score_display()
 
+	# ハイスコア表示
 	def hiscore_display(self):
 		if(self.score > self.hiscore):
 			if((self.score % 10) == 0):
@@ -279,6 +284,7 @@ class App:
 		self.put_strings(13, 10, "HIGH")
 		self.put_strings(13, 10 + 5, self.str_temp)
 
+	# シールドゲージ表示
 	def put_my_hp_dmg(self):
 		j = 0
 		str_temp = ""
@@ -289,12 +295,12 @@ class App:
 			for i in range(self.my_hp, 10): #(i = my_hp; i < HP_MAX; i++)
 				++j
 				str_temp += ' '
-#				str_temp[j++] = ' ';
-#		str_temp[j] = '\0';
+#				str_temp[j++] = ' '
+#		str_temp[j] = '\0'
 
-		self.put_strings(-3, 7, str_temp);
+		self.put_strings(-3, 7, str_temp)
 
-#		self.my_hp_flag = TRUE;
+#		self.my_hp_flag = TRUE
 
 	# パレット設定
 	def changepal(self, value):
@@ -303,23 +309,23 @@ class App:
 			g = (self.old_colors[palno] >> 8) % 256
 			b = (self.old_colors[palno]) % 256
 
-#			pal[k] = org_pal[j][k] + value;
+#			pal[k] = org_pal[j][k] + value
 			if(value >= 0):
-				r2  = int(r * ((255 - value)) / 255);
-				g2  = int(g * ((255 - value)) / 255);
-				b2  = int(b * ((255 - value)) / 255);
+				r2  = int(r * ((255 - value)) / 255)
+				g2  = int(g * ((255 - value)) / 255)
+				b2  = int(b * ((255 - value)) / 255)
 			else:
-				r2  = int(r - value);
+				r2  = int(r - value)
 				if(r2 < 0):
 					r2 = 0
 				if(r2 > 255):
 					r2 = 255
-				g2  = int(g - value);
+				g2  = int(g - value)
 				if(g2 < 0):
 					g2 = 0
 				if(g2 > 255):
 					g2 = 255
-				b2  = int(b - value);
+				b2  = int(b - value)
 				if(b2 < 0):
 					b2 = 0
 				if(b2 > 255):
@@ -334,6 +340,7 @@ class App:
 
 		self.player_xx = 0
 		self.player_yy = 0
+		self.player_type = 0
 
 		self.player_bullets = []
 		self.enemies = []
@@ -347,6 +354,7 @@ class App:
 		self.current_time = 0
 		self.my_hp = 7
 		self.my_dmg = False
+		self.mypal_dmgtime = 0
 
 		self.shot_c = 6 << 3
 
@@ -356,7 +364,7 @@ class App:
 			pyxel.quit()
 
 		if self.scene == "GAMEOVER":
-			self.changepal(self.colorvalue)
+#			self.changepal(self.colorvalue)
 			self.colorvalue -= 1
 			if(self.colorvalue < -255):
 				self.colorvalue = 255
@@ -367,12 +375,12 @@ class App:
 			self.colorvalue = self.colorvalue - 1
 			if(self.colorvalue == 0):
 				self.scene = "TITLE"
-			self.changepal(self.colorvalue)
+#			self.changepal(self.colorvalue)
 
 		elif self.scene == "TITLE":
 			if pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_START): # or pyxel.btnv(GAMEPAD1_AXIS_TRIGGERLEFT) != 0:
 				self.initdata()
-				self.logox = 0;
+				self.logox = 0
 				self.scene = "DEMO"
 				pyxel.playm(0, 0,True)
 
@@ -383,7 +391,7 @@ class App:
 			elif pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A):
 				self.scene = "OPENING"
 				self.colorvalue = 255
-				self.changepal(self.colorvalue)
+#				self.changepal(self.colorvalue)
 				pyxel.stop()
 
 		elif self.scene == "DEMO":
@@ -400,6 +408,13 @@ class App:
 				# 自機移動
 				self.player_xx = (pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT)) - (pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT))
 				self.player_yy = (pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN)) - (pyxel.btn(pyxel.KEY_UP) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_UP))
+
+				if(self.player_xx > 0):
+					self.player_type = 1
+				elif(self.player_xx < 0):
+					self.player_type = 2
+				else:
+					self.player_type = 0
 
 				if ((self.player_xx == 0) or (self.player_yy == 0)):
 					self.player_xx *= 3
@@ -469,7 +484,9 @@ class App:
 						enemy.y < self.player_y + 16 and
 						enemy.y + 16 > self.player_y):
 						self.my_dmg = True
-						pyxel.play(3,16,0,False,True)
+#						pyxel.play(3,16,0,False,True)
+						if(self.mypal_dmgtime == 0):
+							self.my_hp = self.my_hp - 1
 
 				# 当たり判定（プレイヤーと敵の弾）
 				for bullet  in self.enemy_bullets[:]:
@@ -479,16 +496,24 @@ class App:
 						self.player_y + 16 > bullet.y):
 						self.enemy_bullets.remove(bullet)
 						self.my_dmg = True
-						pyxel.play(3,16,0,False,True)
+						self.my_hp = self.my_hp - 1
+#						pyxel.play(3,16,0,False,True)
 
 				if(self.my_dmg == True):
-					self.my_hp = self.my_hp - 1
-					if(self.my_hp < 0):
-						self.scene = "GAMEOVER" #game_over = True
-						self.colorvalue = 0
+					pyxel.play(3,16,0,False,True)
+					self.mypal_dmgtime = 12 #DMGTIME * 4;
+					self.my_dmg = False
+
+				if(self.mypal_dmgtime > 0):
+					self.mypal_dmgtime = self.mypal_dmgtime - 1
+#					if(self.mypal_dmgtime <= 0):
+
+				if(self.my_hp < 0):
+					self.scene = "GAMEOVER" #game_over = True
+					self.colorvalue = 0
 
 
-				# スケジュール
+				# スケジュール処理実行
 				if(self.current_time == 0):
 #				while self.schedule_index < len(self.schedule):
 					if self.schedule_index < len(self.schedule): #and current_time >= schedule[schedule_index]['time']:
@@ -524,9 +549,11 @@ class App:
 				x = 1
 				self.put_strings(7 + x * 2, 11, "?")
 
+			self.changepal(self.colorvalue)
 			pyxel.blt(128 - 48 - 16, 48 - 16, 0, 0, 0, 128, 64, 0)
 
 		elif self.scene == "DEMO":
+			# タイトルロゴアニメーション
 			self.score_displayall()
 
 			if(self.logox % 8):
@@ -547,32 +574,36 @@ class App:
 			for bullet in self.player_bullets:
 				bullet.draw()
 
-			# 自機
-			if(self.my_dmg == True or self.scene == "GAMEOVER"):
+			# 自機描画
+			if(self.mypal_dmgtime != 0  or self.scene == "GAMEOVER"):
 				for i in range(1,15):
 					pyxel.pal(i,15)
 
-			pyxel.blt(self.player_x, self.player_y, 2, 0, 0, 24, 16, 0)
+			pyxel.blt(self.player_x, self.player_y, 2, self.player_type * 24, 0, 24, 16, 0)
 			pyxel.pal()
-			self.my_dmg = False
+#			self.my_dmg = False
 
 #			pyxel.tri(self.player_x, self.player_y, 
 #					 self.player_x + 8, self.player_y + 8, 
 #					 self.player_x - 8, self.player_y + 8, 13)
 #			pyxel.rect(self.player_x - 2, self.player_y + 8, 4, 4, 5)
 
-
+			# 一時停止表示
 			if self.scene == "PAUSE":
 #				pyxel.text(110, 120, "PAUSE", 7)
 				self.put_strings(14, 13, "PAUSE")
 
-			self.put_strings(self.message_x, self.message_y, self.message);
+			# イベント文字表示
+			self.put_strings(self.message_x, self.message_y, self.message)
 
+			# 各種ゲージ表示
 			self.put_strings(-3, 0, "SHIELD")
 			self.score_displayall()
 			self.put_my_hp_dmg()
 
 		if(self.scene == "GAMEOVER"):
 			self.put_strings(14, 10, " GAME OVER ")
+#			self.changepal(0)
+			self.changepal(self.colorvalue)
 
 App()
