@@ -29,8 +29,8 @@ class PlayerBullet:
 	def __init__(self, x, y):
 		self.x = x
 		self.y = y
-		self.w = 3
-		self.h = 8
+		self.w = 4
+		self.h = 4
 		self.speed = 6
 
 	def update(self):
@@ -44,14 +44,14 @@ class PlayerBullet:
 
 #敵弾クラス
 class EnemyBullet:
-	def __init__(self, x, y, dx, dy):
+	def __init__(self, x, y, dx, dy, speed):
 		self.x = x
 		self.y = y
-		self.w = 3
-		self.h = 3
+		self.w = 2
+		self.h = 2
 		self.dx = dx
 		self.dy = dy
-		self.speed = 2
+		self.speed = speed
 
 	def update(self):
 		self.x += self.dx * self.speed
@@ -65,10 +65,10 @@ class EnemyBullet:
 
 # 敵クラス
 class Enemy:
-	def __init__(self, x, y, player_x, player_y, hp, type, chr):
+	def __init__(self, x, y, player_x, player_y, hp, type, chr, speed):
 		self.x = x
 		self.y = y
-		self.speed = 2
+		self.speed = speed
 		self.shoot_timer = 0
 		self.hp = hp
 		self.type = type
@@ -91,7 +91,7 @@ class Enemy:
 			if dist > 0:
 				dx /= dist
 				dy /= dist
-				enemy_bullets.append(EnemyBullet(enemy_center_x, enemy_center_y, dx, dy))
+				enemy_bullets.append(EnemyBullet(enemy_center_x, enemy_center_y, dx, dy, 1))
 			self.shoot_timer = 0
 
 	def draw(self):
@@ -185,7 +185,7 @@ class App:
 			x = int(event['event_2'])*256/144-16
 			y = int(event['event_3'])-16
 			hp = int(event['event_4'])
-			self.enemies.append(Enemy(x, y, self.player_x, self.player_y, hp, type, chr))
+			self.enemies.append(Enemy(x, y, self.player_x, self.player_y, hp, type, chr, 1.5))
 		elif(com == "COM_BGMCHANGE"):
 			print(f"曲変更")
 		elif(com == "COM_BGMFADEOUT"):
@@ -215,6 +215,7 @@ class App:
 			print(f"終了")
 		elif(com == "COM_SE"):
 			x = int(event['event_0'])
+			pyxel.play(2,15,0,False,True)
 			print(f"SE再生 {x}")
 		elif(com == "COM_BGPALFADEOUT"):
 			print(f"画面フェードアウト")
@@ -356,7 +357,7 @@ class App:
 		self.my_dmg = False
 		self.mypal_dmgtime = 0
 
-		self.shot_c = 6 << 3
+		self.shot_c = 6 << 4 #3
 
 	def update(self):
 		if pyxel.btnp(pyxel.KEY_ESCAPE):
@@ -479,10 +480,10 @@ class App:
 
 				# 当たり判定（プレイヤーと敵）
 				for enemy in self.enemies[:]:
-					if (enemy.x < self.player_x + 16 and
-						enemy.x + 16 > self.player_x and
-						enemy.y < self.player_y + 16 and
-						enemy.y + 16 > self.player_y):
+					if (enemy.x < self.player_x + 9+1 and
+						enemy.x + 16 > self.player_x+9 and
+						enemy.y < self.player_y + 9+1 and
+						enemy.y + 16 > self.player_y+9):
 						self.my_dmg = True
 #						pyxel.play(3,16,0,False,True)
 						if(self.mypal_dmgtime == 0):
