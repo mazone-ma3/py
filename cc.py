@@ -24,12 +24,13 @@ class Star:
 #		pyxel.rect(self.x, self.y, self.size, self.size, self.color)  # 星
 		pyxel.pset(self.x, self.y, self.color)  # 星
 
+#自機弾クラス
 class PlayerBullet:
 	def __init__(self, x, y):
 		self.x = x
 		self.y = y
 		self.w = 3
-		self.h = 3
+		self.h = 8
 		self.speed = 6
 
 	def update(self):
@@ -41,6 +42,7 @@ class PlayerBullet:
 #		pyxel.rectb(self.x, self.y, self.w, self.h, 0)
 
 
+#敵弾クラス
 class EnemyBullet:
 	def __init__(self, x, y, dx, dy):
 		self.x = x
@@ -60,17 +62,25 @@ class EnemyBullet:
 #		pyxel.rect(self.x, self.y, self.w, self.h, 8)
 #		pyxel.rectb(self.x, self.y, self.w, self.h, 0)
 
+
+# 敵クラス
 class Enemy:
-	def __init__(self, x, y, player_x, player_y):
+	def __init__(self, x, y, player_x, player_y, hp, type, chr):
 		self.x = x
 		self.y = y
 		self.speed = 2
 		self.shoot_timer = 0
+		self.hp = hp
+		self.type = type
+		if(chr > 2):
+			chr = 2
+		self.chr = chr
+		self.dmg = False
 
 	def update(self, player_x, player_y, enemy_bullets):
 		self.y += self.speed
 		self.shoot_timer += 1
-		if self.shoot_timer >= 20:
+		if self.shoot_timer >= 30:
 			player_center_x = player_x + 8
 			player_center_y = player_y + 8
 			enemy_center_x = self.x + 8
@@ -85,8 +95,12 @@ class Enemy:
 			self.shoot_timer = 0
 
 	def draw(self):
-		pyxel.blt(self.x, self.y, 0, 16, 0, 16, 16, 14)
-
+		if(self.dmg == True):
+			for i in range(1,15):
+				pyxel.pal(i,8)
+		pyxel.blt(self.x, self.y, 2, self.chr * 16, 32, 16, 16, 14)
+		pyxel.pal()
+		self.dmg = False
 
 # ゲームループ #################################################################
 
@@ -166,9 +180,12 @@ class App:
 			print(f"敵消去待ち")
 		elif(com == "COM_TKAPPEND"):
 			print(f"敵追加")
-			y = int(event['event_1'])-16
+			type = (event['event_0'])
+			chr = int(event['event_1'])
 			x = int(event['event_2'])*256/144-16
-			self.enemies.append(Enemy(x, y, self.player_x, self.player_y))
+			y = int(event['event_3'])-16
+			hp = int(event['event_4'])
+			self.enemies.append(Enemy(x, y, self.player_x, self.player_y, hp, type, chr))
 		elif(com == "COM_BGMCHANGE"):
 			print(f"曲変更")
 		elif(com == "COM_BGMFADEOUT"):
@@ -277,7 +294,7 @@ class App:
 
 #		self.my_hp_flag = TRUE;
 
-
+	# パレット設定
 	def changepal(self, value):
 		for palno in range(16):
 			r = (self.old_colors[palno] >> 16) % 256
@@ -285,9 +302,26 @@ class App:
 			b = (self.old_colors[palno]) % 256
 
 #			pal[k] = org_pal[j][k] + value;
-			r2  = int(r * ((255 - value)) / 255);
-			g2  = int(g * ((255 - value)) / 255);
-			b2  = int(b * ((255 - value)) / 255);
+			if(value >= 0):
+				r2  = int(r * ((255 - value)) / 255);
+				g2  = int(g * ((255 - value)) / 255);
+				b2  = int(b * ((255 - value)) / 255);
+			else:
+				r2  = int(r - value);
+				if(r2 < 0):
+					r2 = 0
+				if(r2 > 255):
+					r2 = 255
+				g2  = int(g - value);
+				if(g2 < 0):
+					g2 = 0
+				if(g2 > 255):
+					g2 = 255
+				b2  = int(b - value);
+				if(b2 < 0):
+					b2 = 0
+				if(b2 > 255):
+					b2 = 255
 
 			pyxel.colors[palno] =((r2) << 16) | (((g2) << 8)) | (( b2))
 
@@ -310,6 +344,7 @@ class App:
 		self.schedule_index = 0
 		self.current_time = 0
 		self.my_hp = 7
+		self.my_dmg = False
 
 	def update(self):
 		if pyxel.btnp(pyxel.KEY_ESCAPE):
@@ -317,10 +352,12 @@ class App:
 			pyxel.quit()
 
 		if self.scene == "GAMEOVER":
-			self.scene = "OPENING"
-			self.colorvalue = 255
 			self.changepal(self.colorvalue)
-			pyxel.stop()
+			self.colorvalue -= 1
+			if(self.colorvalue < -255):
+				self.colorvalue = 255
+				self.scene = "OPENING"
+				pyxel.stop()
 
 		elif self.scene == "OPENING":
 			self.colorvalue = self.colorvalue - 1
@@ -408,10 +445,17 @@ class App:
 							enemy.x + 16 > bullet.x and
 							enemy.y < bullet.y + bullet.h and
 							enemy.y + 16 > bullet.y):
-							self.enemies.remove(enemy)
+
+							enemy.hp = enemy.hp - 1
+							self.score += 10
+							enemy.dmg = True
+
+							if(enemy.hp < 1):
+								self.enemies.remove(enemy)
+								self.score += 100
+
 							self.player_bullets.remove(bullet)
-							self.score += 100
-							pyxel.play(3,16)
+							pyxel.play(3,16,0,False,True)
 							break
 
 				# 当たり判定（プレイヤーと敵）
@@ -420,8 +464,8 @@ class App:
 						enemy.x + 16 > self.player_x and
 						enemy.y < self.player_y + 16 and
 						enemy.y + 16 > self.player_y):
-						self.my_hp = self.my_hp - 1
-						pyxel.play(3,16)
+						self.my_dmg = True
+						pyxel.play(3,16,0,False,True)
 
 				# 当たり判定（プレイヤーと敵の弾）
 				for bullet  in self.enemy_bullets[:]:
@@ -429,12 +473,15 @@ class App:
 						self.player_x + 16 > bullet.x and
 						self.player_y < bullet.y + bullet.h and
 						self.player_y + 16 > bullet.y):
-						self.my_hp = self.my_hp - 1
 						self.enemy_bullets.remove(bullet)
-						pyxel.play(3,16)
+						self.my_dmg = True
+						pyxel.play(3,16,0,False,True)
 
-				if(self.my_hp < 0):
-					self.scene = "GAMEOVER" #game_over = True
+				if(self.my_dmg == True):
+					self.my_hp = self.my_hp - 1
+					if(self.my_hp < 0):
+						self.scene = "GAMEOVER" #game_over = True
+						self.colorvalue = 0
 
 
 				# スケジュール
@@ -483,27 +530,33 @@ class App:
 			else:
 				pyxel.blt(128 - self.logox - 48 - 16, 48 - 16, 0, 0, 0, 128, 64, 0)
 
-		elif self.scene == "GAME" or self.scene == "PAUSE":
-
-			# 自機
-			pyxel.blt(self.player_x, self.player_y, 2, 0, 0, 24, 16, 0)
-
-#			pyxel.tri(self.player_x, self.player_y, 
-#					 self.player_x + 8, self.player_y + 8, 
-#					 self.player_x - 8, self.player_y + 8, 13)
-#			pyxel.rect(self.player_x - 2, self.player_y + 8, 4, 4, 5)
-
-			# プレイヤーの弾描画
-			for bullet in self.player_bullets:
+		elif self.scene == "GAME" or self.scene == "PAUSE" or self.scene == "GAMEOVER":
+			# 敵の弾描画
+			for bullet in self.enemy_bullets:
 				bullet.draw()
 
 			# 敵の描画
 			for enemy in self.enemies:
 				enemy.draw()
 
-			# 敵の弾描画
-			for bullet in self.enemy_bullets:
+			# プレイヤーの弾描画
+			for bullet in self.player_bullets:
 				bullet.draw()
+
+			# 自機
+			if(self.my_dmg == True or self.scene == "GAMEOVER"):
+				for i in range(1,15):
+					pyxel.pal(i,15)
+
+			pyxel.blt(self.player_x, self.player_y, 2, 0, 0, 24, 16, 0)
+			pyxel.pal()
+			self.my_dmg = False
+
+#			pyxel.tri(self.player_x, self.player_y, 
+#					 self.player_x + 8, self.player_y + 8, 
+#					 self.player_x - 8, self.player_y + 8, 13)
+#			pyxel.rect(self.player_x - 2, self.player_y + 8, 4, 4, 5)
+
 
 			if self.scene == "PAUSE":
 #				pyxel.text(110, 120, "PAUSE", 7)
@@ -511,8 +564,11 @@ class App:
 
 			self.put_strings(self.message_x, self.message_y, self.message);
 
-			self.put_strings(-3, 0, "SHIELD");
+			self.put_strings(-3, 0, "SHIELD")
 			self.score_displayall()
 			self.put_my_hp_dmg()
+
+		if(self.scene == "GAMEOVER"):
+			self.put_strings(14, 10, " GAME OVER ")
 
 App()
