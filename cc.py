@@ -72,9 +72,23 @@ class Enemy:
 		self.shoot_timer = 0
 		self.hp = hp
 		self.type = type
-		if(chr > 2):
-			chr = 2
+
+		# キャラデータを変換
+		if(type == "PAT_TEKI3"):
+			pat = 4
+		elif(type == "PAT_TEKI2"):
+			pat = 3
+		elif(type == "PAT_TEKI4"):
+			pat = 5
+		elif(type == "PAT_BOSS1"):
+			pat = 0
+		else:
+			pat = 0
+
+		self.pat = pat
+
 		self.chr = chr
+
 		self.dmg = False
 
 	def update(self, player_x, player_y, enemy_bullets, shot_c):
@@ -98,7 +112,7 @@ class Enemy:
 		if(self.dmg == True):
 			for i in range(1,15):
 				pyxel.pal(i,8)
-		pyxel.blt(self.x, self.y, 2, self.chr * 16, 32, 16, 16, 14)
+		pyxel.blt(self.x, self.y, 2, self.pat * 16, 32, 16, 16, 0) #14)
 		pyxel.pal()
 		self.dmg = False
 
@@ -170,6 +184,7 @@ class App:
 		print(f"Event: {event['event_type']}, 0: {event['event_0']}, 1: {event['event_1']}, 2: {event['event_2']}, 3: {event['event_3']} ")
 
 		com = event['event_type']
+		self.com = com
 		if(com == "COM_WAITCOUNT"):
 			count = event['event_0']
 			print(f"時間待ち {count}カウント")
@@ -178,6 +193,7 @@ class App:
 
 		elif(com == "COM_TKALLDEL"):
 			print(f"敵消去待ち")
+			self.current_time = 1
 		elif(com == "COM_TKAPPEND"):
 			print(f"敵追加")
 			type = (event['event_0'])
@@ -200,7 +216,8 @@ class App:
 			self.message_y = y
 			self.message = message[int(b)]
 		elif(com == "COM_STAGEADD"):
-			self.stage = self.stage + 1
+			if(self.stage < 99):
+				self.stage = self.stage + 1
 			x = int(event['event_0'])
 			y = int(event['event_1'])
 			self.message = message[2] + str(self.stage)
@@ -211,6 +228,7 @@ class App:
 
 			print(f"次のステージへ")
 		elif(com == "COM_END"):
+			self.current_time = 1
 			self.schedule_index = -1
 			print(f"終了")
 		elif(com == "COM_SE"):
@@ -221,6 +239,9 @@ class App:
 			print(f"画面フェードアウト")
 		elif(com == "COM_JIKIMOVE"):
 			print(f"自機移動")
+		elif(com == "COM_DUMMY"):
+			self.current_time = 1
+			print(f"ダミー")
 
 	# 文字列表示
 	def put_strings(self, y, x, str):
@@ -353,12 +374,14 @@ class App:
 		self.stage = 0
 		self.schedule_index = 0
 		self.current_time = 0
+		self.com = "COM_DUMMY"
 		self.my_hp = 7
 		self.my_dmg = False
 		self.mypal_dmgtime = 0
 
 		self.shot_c = 6 << 4 #3
 
+	# メインループ
 	def update(self):
 		if pyxel.btnp(pyxel.KEY_ESCAPE):
 # or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):
@@ -513,22 +536,40 @@ class App:
 					self.scene = "GAMEOVER" #game_over = True
 					self.colorvalue = 0
 
+				self.do_schedule()
 
-				# スケジュール処理実行
-				if(self.current_time == 0):
-#				while self.schedule_index < len(self.schedule):
-					if self.schedule_index < len(self.schedule): #and current_time >= schedule[schedule_index]['time']:
-						self.process_event(self.schedule[self.schedule_index])
-#						++self.schedule_index
-						self.schedule_index = self.schedule_index + 1
-
-					else:
-						self.schedule_index = 0
-
-				if(self.current_time > 0):
+	def	do_schedule(self):
+		# スケジュール処理実行
+		while(1):
+			if(self.current_time != 0):
+#				if(self.current_time > 0):
+#					com = self.schedule[self.schedule_index].event['event_type']
+				if(self.com == "COM_WAITCOUNT"):
 					self.current_time = self.current_time - 1
-#					print(self.current_time)
+					return
+				elif(self.com == "COM_TKALLDEL"):
+#					print(len(self.enemies))
+					if(len(self.enemies[:]) == 0):
+						self.current_time = 0
+					return
+				elif(self.com == "COM_DUMMY"):
+					return
+				elif(self.com == "COM_END"):
+					self.current_time = self.current_time - 1
 
+			self.event = self.schedule[self.schedule_index]
+#			self.com = event.
+			self.process_event(self.event)
+			self.schedule_index = self.schedule_index + 1
+			if self.schedule_index >= len(self.schedule):
+				self.schedule_index = 0
+
+			print(self.current_time)
+
+#			if(self.current_time > 0):
+#				self.current_time = self.current_time - 1
+
+	# 画面の更新
 	def draw(self):
 		pyxel.cls(0)
 
