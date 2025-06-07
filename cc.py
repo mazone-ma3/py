@@ -72,6 +72,7 @@ class Enemy:
 		self.shoot_timer = 0
 		self.hp = hp
 		self.type = type
+		self.dmgtime = 0
 
 		# キャラデータを変換
 		if(type == "PAT_TEKI3"):
@@ -94,6 +95,19 @@ class Enemy:
 	def update(self, player_x, player_y, enemy_bullets, shot_c):
 		self.y += self.speed
 		self.shoot_timer += 1
+
+		if(self.chr == 0):
+			if(self.dmgtime == 0):
+				self.pat = 0
+			elif(self.dmgtime ==5):
+				self.pat = 1
+			elif(self.dmgtime ==10):
+				self.pat = 2
+#			elif(self.dmgtime ==13):
+			elif(self.dmgtime ==15):
+				self.hp = 0
+
+
 		if self.shoot_timer >= shot_c: #(6 << 3): #30:
 			player_center_x = player_x + 8
 			player_center_y = player_y + 8
@@ -108,13 +122,14 @@ class Enemy:
 				enemy_bullets.append(EnemyBullet(enemy_center_x, enemy_center_y, dx, dy, 1))
 			self.shoot_timer = 0
 
+
 	def draw(self):
 		if(self.dmg == True):
 			for i in range(1,15):
 				pyxel.pal(i,8)
 		pyxel.blt(self.x, self.y, 2, self.pat * 16, 32, 16, 16, 0) #14)
 		pyxel.pal()
-		self.dmg = False
+#		self.dmg = False
 
 # ゲームクラス#################################################################
 
@@ -483,58 +498,82 @@ class App:
 
 				# 当たり判定（プレイヤーの弾と敵）
 				for enemy in self.enemies[:]:
-					for bullet in self.player_bullets[:]:
-						if (enemy.x < bullet.x + bullet.w and
-							enemy.x + 16 > bullet.x and
-							enemy.y < bullet.y + bullet.h and
-							enemy.y + 16 > bullet.y):
+					if(enemy.hp > 2):
+						for bullet in self.player_bullets[:]:
+							if (enemy.x < bullet.x + bullet.w and
+								enemy.x + 16 > bullet.x and
+									enemy.y < bullet.y + bullet.h and
+									enemy.y + 16 > bullet.y):
 
-							enemy.hp = enemy.hp - 1
-							self.score += 10
-							enemy.dmg = True
+								enemy.hp = enemy.hp - 1
+								self.score += 10
+								enemy.dmgtime = 1
+								enemy.dmg = True
+								self.player_bullets.remove(bullet)
+								break
 
-							if(enemy.hp < 3):
-								self.enemies.remove(enemy)
-								self.score += 100
-								pyxel.play(3,16,0,False,True)
-
-							self.player_bullets.remove(bullet)
-							break
-
-				# 当たり判定（プレイヤーと敵）
 				for enemy in self.enemies[:]:
-					if (enemy.x < self.player_x + 9+1 and
-						enemy.x + 16 > self.player_x+9 and
-						enemy.y < self.player_y + 9+1 and
-						enemy.y + 16 > self.player_y+9):
-						self.my_dmg = True
-#						pyxel.play(3,16,0,False,True)
-						if(self.mypal_dmgtime == 0):
-							self.my_hp = self.my_hp - 1
+					# 敵消滅→爆発パターンへ
+					if(enemy.hp == 0):
+						self.enemies.remove(enemy)
+						break
+					elif(enemy.hp == 2):
+#						self.enemies.remove(enemy)
+						enemy.hp = 1
+						self.score += 100
+						pyxel.play(3,16,0,False,True)
+						enemy.dmg = False
+						enemy.chr = 0
+						enemy.type = "TEKI_BOMB"
 
-				# 当たり判定（プレイヤーと敵の弾）
-				for bullet  in self.enemy_bullets[:]:
-					if (self.player_x < bullet.x + bullet.w and
-						self.player_x + 16 > bullet.x and
-						self.player_y < bullet.y + bullet.h and
-						self.player_y + 16 > bullet.y):
-						self.enemy_bullets.remove(bullet)
-						self.my_dmg = True
+						break
+					elif(enemy.dmgtime > 0):
+						enemy.dmgtime = enemy.dmgtime + 1
+						if(enemy.dmgtime > 3):
+#							enemy.hp = 0
+							enemy.dmg = False
+#						else:
+#							enemy.hp = 0
+
+				if(self.mypal_dmgtime == 0):
+					# 当たり判定（プレイヤーと敵）
+					for enemy in self.enemies[:]:
+						if (enemy.x < self.player_x + 9+1 and
+							enemy.x + 16 > self.player_x+9 and
+							enemy.y < self.player_y + 9+1 and
+							enemy.y + 16 > self.player_y+9):
+							self.my_dmg = True
+#							pyxel.play(3,16,0,False,True)
+#							if(self.mypal_dmgtime == 0):
+#							self.my_hp = self.my_hp - 1
+
+					# 当たり判定（プレイヤーと敵の弾）
+					for bullet  in self.enemy_bullets[:]:
+						if (self.player_x < bullet.x + bullet.w and
+							self.player_x + 16 > bullet.x and
+							self.player_y < bullet.y + bullet.h and
+							self.player_y + 16 > bullet.y):
+							self.enemy_bullets.remove(bullet)
+							self.my_dmg = True
+#							self.my_hp = self.my_hp - 1
+#							pyxel.play(3,16,0,False,True)
+
+					if(self.my_dmg == True):
+						pyxel.play(3,16,0,False,True)
+						self.mypal_dmgtime = 12 #DMGTIME * 4;
+						self.my_dmg = False
 						self.my_hp = self.my_hp - 1
-#						pyxel.play(3,16,0,False,True)
 
-				if(self.my_dmg == True):
-					pyxel.play(3,16,0,False,True)
-					self.mypal_dmgtime = 12 #DMGTIME * 4;
-					self.my_dmg = False
+						if(self.my_hp < 0):
+							self.scene = "GAMEOVER" #game_over = True
+							self.colorvalue = 0
 
-				if(self.mypal_dmgtime > 0):
+#				(self.mypal_dmgtime > 0):
+				else:
 					self.mypal_dmgtime = self.mypal_dmgtime - 1
 #					if(self.mypal_dmgtime <= 0):
+#						self.my_dmg = False
 
-				if(self.my_hp < 0):
-					self.scene = "GAMEOVER" #game_over = True
-					self.colorvalue = 0
 
 				self.do_schedule()
 
