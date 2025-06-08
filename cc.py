@@ -429,17 +429,23 @@ class Enemy:
 
 		# 敵弾を発射する
 		if (self.dmgtime == 0) and (self.shoot_timer >= shot_c): #(6 << 3): #30:
-			player_center_x = player_x + 8
-			player_center_y = player_y + 8
-			enemy_center_x = self.x + 8
-			enemy_center_y = self.y + 8
-			dx = player_center_x - enemy_center_x
-			dy = player_center_y - enemy_center_y
-			dist = math.sqrt(dx**2 + dy**2)
-			if dist > 0:
-				dx /= dist
-				dy /= dist
-				enemy_bullets.append(EnemyBullet(enemy_center_x, enemy_center_y, dx, dy, 1))
+#			player_center_x = player_x + 8
+#			player_center_y = player_y + 8
+#			enemy_center_x = self.x + 8
+#			enemy_center_y = self.y + 8
+#			dx = player_center_x - enemy_center_x
+#			dy = player_center_y - enemy_center_y
+#			dist = math.sqrt(dx**2 + dy**2)
+#			if dist > 0:
+#				dx /= dist
+#				dy /= dist
+#				enemy_bullets.append(EnemyBullet(enemy_center_x, enemy_center_y, dx, dy, 1))
+
+			dir = tekishot_dir(player_x, player_y, self.x, self.y)
+			dx = direction[dir][0] / (1 << 3)
+			dy = direction[dir][1] / (1 << 3)
+			enemy_bullets.append(EnemyBullet(self.x + (4) + dx, self.y + (4) + dy, dx, dy, 1))
+
 			self.shoot_timer = 0
 
 	# 敵の描画
@@ -713,7 +719,7 @@ class App:
 		self.my_dmg = False
 		self.mypal_dmgtime = 0
 
-		self.shot_c = 6 << 4 #3
+		self.shot_c = 6 << 3
 
 	# メインループ
 	def update(self):
