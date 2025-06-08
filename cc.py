@@ -97,7 +97,7 @@ class Enemy:
 		self.shoot_timer += 1
 
 		if(self.chr == 0):
-			if(self.dmgtime == 0):
+			if(self.dmgtime == 1):
 				self.pat = 0
 			elif(self.dmgtime ==5):
 				self.pat = 1
@@ -107,8 +107,7 @@ class Enemy:
 			elif(self.dmgtime ==15):
 				self.hp = 0
 
-
-		if self.shoot_timer >= shot_c: #(6 << 3): #30:
+		if self.dmgtime == 0 and self.shoot_timer >= shot_c: #(6 << 3): #30:
 			player_center_x = player_x + 8
 			player_center_y = player_y + 8
 			enemy_center_x = self.x + 8
