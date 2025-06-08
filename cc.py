@@ -4,12 +4,132 @@ import math
 import csv
 import time
 
+DIR_RIGHT = 0	#/* 縦では上 */
+DIR_DOWN  = 8	#/* 縦では右 */
+DIR_LEFT = 16	#/* 縦では下 */
+DIR_UP   = 24	#/* 縦では左 */
+DIR_OFF = 32	#/* 縦では無 */
+
+sinwave = ( #[SINFREQ] = {
+			0,  1,  2,  3,  3,  4,  4,  4,  5,  5,  5,  5,  4,  4,  4,  3,  3,  2,  1,
+			0, -1, -2, -3, -3, -4, -4, -4, -5, -5, -5, -5, -4, -4, -4, -3, -3, -2, -1,
+)
+
+direction = [ #[33][2] = (
+	[ 12,  0],	#/* 右 = 0 */
+	[ 11,  2],
+	[ 10,  4],
+	[  9,  6],
+	[  8,  8],
+	[  6,  9],
+	[  4, 10],
+	[  2, 11],
+
+	[  0, 12],	#/* 下 = 8 */
+	[ -2, 11],
+	[ -4, 10],
+	[ -6,  9],
+	[ -8,  8],
+	[ -9,  6],
+	[-10,  4],
+	[-11,  2],
+
+	[-12, -0],	#/* 左 = 16 */
+	[-11, -2],
+	[-10, -4],
+	[ -9, -6],
+	[ -8, -8],
+	[ -6, -9],
+	[ -4,-10],
+	[ -2,-11],
+
+	[  0,-12],	#/* 上 = 24 */
+	[  2,-11],
+	[  4,-10],
+	[  6, -9],
+	[  8, -8],
+	[  9, -6],
+	[ 10, -4],
+	[ 11, -2],
+
+	[ 0, 0],
+]
+
+def tekishot_dir(my_x, my_y, tmp_x, tmp_y):
+	tmp_yy = my_x - tmp_x
+	tmp_xx = my_y - tmp_y # + scrlspd
+	l = 0
+
+	if(tmp_xx < 0):
+		tmp_xx = -tmp_xx
+		if(tmp_yy < 0):
+			l = 16
+			tmp_yy = -tmp_yy
+		else:
+			l = 24
+	elif(tmp_yy < 0):
+		l = 8
+		tmp_yy = -tmp_yy
+
+	if((l == 24) or (l == 8)):
+		if(tmp_yy < tmp_xx):
+			tmp_yy = tmp_yy * 8
+			if((tmp_yy) < tmp_xx):
+				l += 0
+			elif((tmp_yy) < tmp_xx * 3):
+				l += 1
+			elif((tmp_yy) < (tmp_xx * 5)):
+				l += 2
+			elif((tmp_yy) < (tmp_xx * 7)):
+				l += 3
+			else:
+				l += 4
+		else:
+			tmp_xx = tmp_xx * 8
+			if((tmp_yy * 7) < (tmp_xx)):
+				l += 4
+			elif((tmp_yy * 5) < (tmp_xx)):
+				l += 5
+			elif((tmp_yy * 3) < (tmp_xx)):
+				l += 6
+			elif((tmp_yy) < (tmp_xx)):
+				l += 7
+			else:
+				l += 8
+				l %= 32
+	else:
+		if(tmp_yy < tmp_xx):
+			tmp_yy = tmp_yy * 8
+			if((tmp_yy) < tmp_xx):
+				l += 8
+				l %= 32
+			elif((tmp_yy) < (tmp_xx * 3)):
+				l += 7
+			elif((tmp_yy) < (tmp_xx * 5)):
+				l += 6
+			elif((tmp_yy) < (tmp_xx * 7)):
+				l += 5
+			else:
+				l += 4
+		else:
+			tmp_xx = tmp_xx * 8
+			if((tmp_yy * 7) < (tmp_xx)):
+				l += 4
+			elif((tmp_yy * 5) < (tmp_xx)):
+				l += 3
+			elif((tmp_yy * 3) < (tmp_xx)):
+				l += 2
+			elif(tmp_yy < (tmp_xx)):
+				l += 1
+#	print(f"方向 {l} my_x {my_x}  my_y {my_y} x {tmp_x} y {tmp_y} xx {direction[l][0]} yy {direction[l][1]}")
+	return l
+
 class Star:
 	def __init__(self, i):
 		self.reset(i)
 
 	def reset(self, i):
-		self.x = i;  # x座標
+		self.x = i  # x座標
 		self.y = random.randint(0, 256)  # ランダムなy座標（画面全体に初期配置）
 		self.speed = random.uniform(1, 3)  # 速度（1-3ピクセル/フレーム）
 		self.size = 1 #random.choice([1, 2])  # 星のサイズ（1x1）
@@ -73,6 +193,7 @@ class Enemy:
 		self.hp = hp
 		self.type = type
 		self.dmgtime = 0
+		self.tkcount = 0
 
 		# キャラデータを変換
 		if(type == "PAT_TEKI3"):
@@ -91,11 +212,210 @@ class Enemy:
 		self.chr = chr
 
 		self.dmg = False
+		self.teki_dir = 0
 
 	def update(self, player_x, player_y, enemy_bullets, shot_c):
-		self.y += self.speed
-		self.shoot_timer += 1
+		# 敵の動き
+		if self.chr != 0:
+			self.shoot_timer += 1
+			tmp_x = self.x
+			tmp_y = self.y
 
+			if self.chr == 1:
+				# 1 SINWAVE
+				tmp_x -= sinwave[int(self.tkcount / 4)] * 3 / 2 #SINRATE] * ((3 << SHIFT_NUM) / 2)
+
+#	SINFREQ = 19 * 2,
+#	SINRATE = 4
+
+				self.tkcount += 1
+				if self.tkcount >= (19 * 2 * 4): #(SINFREQ * SINRATE))
+					self.tkcount = 0
+
+				tmp_x += sinwave[int(self.tkcount / 4)] * 3 / 2 #((3 << SHIFT_NUM) / 2)
+
+				# 敵機縦方向移動処理
+				if((tmp_y <= (128))): # << SHIFT_NUM))):
+					tmp_y += 1.5 #((3 << 1) / 2) #SHIFT_NUM) / 2)	/* ゆっくり */
+				else:
+					tmp_y += (2) # << SHIFT_NUM)	/* 高速 */
+
+				# 敵機画面外消去(下方向)
+				if(tmp_y > 256): #(SPR_MAX_Y)):
+					self.hp = 0
+				
+			elif self.chr == 2:
+			#2 FIRE
+#				int dir
+
+				self.tkcount += 1
+				if(self.tkcount < 800):
+					if(tmp_x < 0): #(16)): #<< SHIFT_NUM))
+						self.teki_dir = tekishot_dir(player_x, player_y, tmp_x, tmp_y)
+
+					if(tmp_y < 0): #(16)): #<< SHIFT_NUM))
+						self.teki_dir = tekishot_dir(player_x, player_y, tmp_x, tmp_y)
+
+					if(tmp_x > 256-16): #(SCREEN_MAX_X << SHIFT_NUM)):
+						self.teki_dir = tekishot_dir(player_x, player_y, tmp_x, tmp_y)
+
+					if(tmp_y > 256-16): #(SCREEN_MAX_Y << SHIFT_NUM)):
+						self.teki_dir = tekishot_dir(player_x, player_y, tmp_x, tmp_y)
+				else:
+					#/* 敵機画面外消去(左方向) */
+					if(tmp_x < -16):
+						self.hp = 0
+
+					#/* 敵機画面外消去(右方向) */
+					if(tmp_x > (256)): #(SPR_MAX_X)):
+						self.hp = 0
+
+					#/* 敵機画面外消去(上方向) */
+					if(tmp_y < -16):
+						self.hp = 0
+
+					#/* 敵機画面外消去(下方向) */
+					if(tmp_y > (256)): #(SPR_MAX_Y)):
+						self.hp = 0
+
+				dir = self.teki_dir
+#				print(f"方向 {dir} tmp_x {tmp_x} tmp_y {tmp_y} xx {direction[dir][0]} yy {direction[dir][1]}")
+				tmp_x = tmp_x + (direction[dir][0]) / (1 << 3)
+				tmp_y = tmp_y + (direction[dir][1]) / (1 << 3)
+
+			elif self.chr == 4:
+			#4 FIRE1
+				if(self.tkcount > 800):
+					dir = self.teki_dir
+					tmp_x = tmp_x + (direction[dir][0]) / (1 << 3)
+					tmp_y = tmp_y + (direction[dir][1]) / (1 << 3)
+
+					#/* 敵機画面外消去(左方向) */
+					if(tmp_x < -16):
+						self.hp = 0
+
+					#/* 敵機画面外消去(右方向) */
+					if(tmp_x > 256): #(SPR_MAX_X))
+						self.hp = 0
+
+				elif(self.tkcount == 0 or (self.tkcount % 192) == 0):
+					self.tkcount += 1
+					dir = tekishot_dir(player_x, player_y, tmp_x, tmp_y)
+					self.teki_dir = dir
+					tmp_x = tmp_x + (direction[dir][0]) / (1 << 3)
+					tmp_y = tmp_y + (direction[dir][1]) / (1 << 3)
+				elif(((self.tkcount % 192) < 80)):
+					self.tkcount += 1;
+					dir = self.teki_dir;
+
+					tmp_x = tmp_x + (direction[dir][0]) / (1 << 3)
+					tmp_y = tmp_y + (direction[dir][1]) / (1 << 3)
+
+					if(tmp_x < 0): #(16 << SHIFT_NUM)):
+						self.teki_dir = tekishot_dir(player_x, player_y, tmp_x, tmp_y)
+					if(tmp_y < 0): #(16 << SHIFT_NUM)):
+						self.teki_dir = tekishot_dir(player_x, player_y, tmp_x, tmp_y)
+					if(tmp_x > 256): #(SCREEN_MAX_X << SHIFT_NUM)):
+						self.teki_dir = tekishot_dir(player_x, player_y, tmp_x, tmp_y)
+					if(tmp_y > 256): #(SCREEN_MAX_Y << SHIFT_NUM)):
+						self.teki_dir = tekishot_dir(player_x, player_y, tmp_x, tmp_y)
+
+				else:
+					self.tkcount += 1;
+
+				#/* 敵機画面外消去(上方向) */
+				if(tmp_y < -16):
+					if(direction[dir][1] < 0):
+						self.hp = 0
+
+				#/* 敵機画面外消去(下方向) */
+				if(tmp_y > 256): #(SPR_MAX_Y))
+					self.hp = 0
+
+
+			elif self.chr == 3:
+			#3 GURUGURU
+				if(self.tkcount > 800):
+					dir = self.teki_dir
+					#/* 敵機画面外消去(左方向) */
+					if(tmp_x < 0):
+						self.hp = 0
+
+					#/* 敵機画面外消去(右方向) */
+					if(tmp_x > 256): #(SPR_MAX_X)):
+						self.hp = 0
+
+				else:
+					self.tkcount += 1
+					if((self.tkcount % 7) == 1):
+						dir2 = tekishot_dir(player_x, player_y, tmp_x, tmp_y)
+						dir = self.teki_dir;
+#//						if( (DIR_OFF + dir - dir2 + DIR_OFF/2) % DIR_OFF > (DIR_DOWN + DIR_OFF/2) )
+						if((32 + dir - dir2) % 32 > 16):
+							dir += 1
+						else:
+							dir -= 1
+						dir = self.teki_dir = (dir + DIR_OFF) % DIR_OFF
+					else:
+						dir = self.teki_dir
+
+				tmp_x = tmp_x + (direction[dir][0]) / (1 << 3)
+				tmp_y = tmp_y + (direction[dir][1]) / (1 << 3)
+
+#//				teki_pat[i] = teki5_pat[dir / 2];
+
+				#/* 敵機画面外消去(上方向) */
+				if(tmp_y < 0):
+					if(direction[dir][1] < 0):
+						self.hp = 0;
+
+				#/* 敵機画面外消去(下方向) */
+				if(tmp_y > 256): #(SPR_MAX_Y)):
+					self.hp = 0;
+
+			elif self.chr == 5:
+			#5 HERIZAKO
+				if(self.tkcount == 0):
+					dir = tekishot_dir(player_x, player_y, tmp_x, tmp_y)
+					self.teki_dir = dir
+					self.tkcount += 1
+
+				else:
+					dir = self.teki_dir #tekishot_dir(player_x, player_y, tmp_x, tmp_y)
+					if(dir != DIR_UP):
+						self.tkcount += 1
+						if(self.tkcount > 102):
+							self.tkcount = 96
+							dir = DIR_UP
+#//					if(direction[dir][0] > 0){
+#//						++dir;	/* 左回転 */
+#//						dir %= DIR_OFF
+#//					}else{
+#//						--dir;	/* 右回転 */
+#//					}
+					self.teki_dir = dir;
+				tmp_x = tmp_x + (direction[dir][0]) / (1 << 3)
+				tmp_y = tmp_y + (direction[dir][1]) / (1 << 3)
+
+
+				#/* 敵機画面外消去(上方向) */
+				if(dir == DIR_UP):
+					if(tmp_y < 0):
+						self.hp = 0
+
+				if(tmp_y > 256): #(SPR_MAX_Y)):
+					self.hp = 0
+
+			else:
+				tmp_x = self.x
+				tmp_y = self.y + self.speed
+##				self.y += self.speed
+
+			self.x = tmp_x
+			self.y = tmp_y
+
+
+		# 爆発パターン
 		if(self.chr == 0):
 			if(self.dmgtime == 1):
 				self.pat = 0
@@ -107,7 +427,8 @@ class Enemy:
 			elif(self.dmgtime ==15):
 				self.hp = 0
 
-		if self.dmgtime == 0 and self.shoot_timer >= shot_c: #(6 << 3): #30:
+		# 敵弾を発射する
+		if (self.dmgtime == 0) and (self.shoot_timer >= shot_c): #(6 << 3): #30:
 			player_center_x = player_x + 8
 			player_center_y = player_y + 8
 			enemy_center_x = self.x + 8
@@ -121,7 +442,7 @@ class Enemy:
 				enemy_bullets.append(EnemyBullet(enemy_center_x, enemy_center_y, dx, dy, 1))
 			self.shoot_timer = 0
 
-
+	# 敵の描画
 	def draw(self):
 		if(self.dmg == True):
 			for i in range(1,15):
@@ -164,7 +485,6 @@ class App:
 		self.stars = [Star(i * (256 / self.starnums)) for i in range(self.starnums)]
 		self.trgcount = 0
 
-
 		pyxel.run(self.update, self.draw)
 
 
@@ -195,37 +515,37 @@ class App:
 
 		message = "                 ","     WARNING     ","STAGE "
 
-		print(f"Event: {event['event_type']}, 0: {event['event_0']}, 1: {event['event_1']}, 2: {event['event_2']}, 3: {event['event_3']} ")
+#		print(f"Event: {event['event_type']}, 0: {event['event_0']}, 1: {event['event_1']}, 2: {event['event_2']}, 3: {event['event_3']} ")
 
 		com = event['event_type']
 		self.com = com
 		if(com == "COM_WAITCOUNT"):
 			count = event['event_0']
-			print(f"時間待ち {count}カウント")
+#			print(f"時間待ち {count}カウント")
 			self.current_time = int(count)
-			print(self.current_time)
+#			print(self.current_time)
 
 		elif(com == "COM_TKALLDEL"):
-			print(f"敵消去待ち")
+#			print(f"敵消去待ち")
 			self.current_time = 1
 		elif(com == "COM_TKAPPEND"):
-			print(f"敵追加")
+#			print(f"敵追加")
 			type = (event['event_0'])
 			chr = int(event['event_1'])
 			x = int(event['event_2'])*256/144-16
-			y = int(event['event_3'])-16
+			y = int(event['event_3']) #-16
 			hp = int(event['event_4'])
 			self.enemies.append(Enemy(x, y, self.player_x, self.player_y, hp, type, chr, 1.5))
-		elif(com == "COM_BGMCHANGE"):
-			print(f"曲変更")
-		elif(com == "COM_BGMFADEOUT"):
-			print(f"曲終了")
+#		elif(com == "COM_BGMCHANGE"):
+#			print(f"曲変更")
+#		elif(com == "COM_BGMFADEOUT"):
+#			print(f"曲終了")
 		elif(com == "COM_PUTMESSAGE"):
 			a = event['event_2'].encode("UTF-8")
 			x = int(event['event_0'])
 			y = int(event['event_1'])
 			b = int(event['event_2'])
-			print(f"メッセージ X={x} Y={y} {message[int(b)]}")
+#			print(f"メッセージ X={x} Y={y} {message[int(b)]}")
 			self.message_x = x
 			self.message_y = y
 			self.message = message[int(b)]
@@ -240,22 +560,22 @@ class App:
 			self.my_hp = 7
 			self.shot_c = self.shot_c / 2
 
-			print(f"次のステージへ")
+#			print(f"次のステージへ")
 		elif(com == "COM_END"):
 			self.current_time = 1
 			self.schedule_index = -1
-			print(f"終了")
+#			print(f"終了")
 		elif(com == "COM_SE"):
 			x = int(event['event_0'])
 			pyxel.play(2,15,0,False,True)
-			print(f"SE再生 {x}")
-		elif(com == "COM_BGPALFADEOUT"):
-			print(f"画面フェードアウト")
-		elif(com == "COM_JIKIMOVE"):
-			print(f"自機移動")
+#			print(f"SE再生 {x}")
+#		elif(com == "COM_BGPALFADEOUT"):
+#			print(f"画面フェードアウト")
+#		elif(com == "COM_JIKIMOVE"):
+#			print(f"自機移動")
 		elif(com == "COM_DUMMY"):
 			self.current_time = 1
-			print(f"ダミー")
+#			print(f"ダミー")
 
 	# 文字列表示
 	def put_strings(self, y, x, str):
@@ -524,6 +844,7 @@ class App:
 						enemy.dmg = False
 						enemy.chr = 0
 						enemy.type = "TEKI_BOMB"
+#						enemy.dmgtime = 1
 
 						break
 					elif(enemy.dmgtime > 0):
@@ -531,6 +852,9 @@ class App:
 						if(enemy.dmgtime > 3):
 #							enemy.hp = 0
 							enemy.dmg = False
+							# 爆発でない場合、カウンタリセット
+							if(enemy.chr != 0):
+								enemy.dmgtime = 0
 #						else:
 #							enemy.hp = 0
 
@@ -559,7 +883,7 @@ class App:
 
 					if(self.my_dmg == True):
 						pyxel.play(3,16,0,False,True)
-						self.mypal_dmgtime = 12 #DMGTIME * 4;
+						self.mypal_dmgtime = 12 #DMGTIME * 4
 						self.my_dmg = False
 						self.my_hp = self.my_hp - 1
 
@@ -602,7 +926,7 @@ class App:
 			if self.schedule_index >= len(self.schedule):
 				self.schedule_index = 0
 
-			print(self.current_time)
+#			print(self.current_time)
 
 #			if(self.current_time > 0):
 #				self.current_time = self.current_time - 1
