@@ -167,8 +167,8 @@ class EnemyBullet:
 	def __init__(self, x, y, dx, dy, speed):
 		self.x = x
 		self.y = y
-		self.w = 2
-		self.h = 2
+		self.w = 4
+		self.h = 4
 		self.dx = dx
 		self.dy = dy
 		self.speed = speed
@@ -878,10 +878,10 @@ class App:
 
 					# 当たり判定（プレイヤーと敵の弾）
 					for bullet  in self.enemy_bullets[:]:
-						if (self.player_x < bullet.x + bullet.w and
-							self.player_x + 16 > bullet.x and
-							self.player_y < bullet.y + bullet.h and
-							self.player_y + 16 > bullet.y):
+						if (self.player_x + 9 < bullet.x + bullet.w + 2 and
+							self.player_x + 9 + 1 > bullet.x and
+							self.player_y + 9 < bullet.y + bullet.h + 2 and
+							self.player_y + 9 + 1 > bullet.y):
 							self.enemy_bullets.remove(bullet)
 							self.my_dmg = True
 #							self.my_hp = self.my_hp - 1
@@ -893,7 +893,7 @@ class App:
 						self.my_dmg = False
 						self.my_hp = self.my_hp - 1
 
-						if(self.my_hp < 0):
+						if(self.my_hp < 1):
 							self.scene = "GAMEOVER" #game_over = True
 							self.colorvalue = 0
 
