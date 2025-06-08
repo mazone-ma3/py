@@ -338,7 +338,7 @@ class Enemy:
 				if(self.tkcount > 800):
 					dir = self.teki_dir
 					#/* 敵機画面外消去(左方向) */
-					if(tmp_x < 0):
+					if(tmp_x < -16):
 						self.hp = 0
 
 					#/* 敵機画面外消去(右方向) */
@@ -365,7 +365,7 @@ class Enemy:
 #//				teki_pat[i] = teki5_pat[dir / 2];
 
 				#/* 敵機画面外消去(上方向) */
-				if(tmp_y < 0):
+				if(tmp_y < -16):
 					if(direction[dir][1] < 0):
 						self.hp = 0;
 
@@ -400,7 +400,7 @@ class Enemy:
 
 				#/* 敵機画面外消去(上方向) */
 				if(dir == DIR_UP):
-					if(tmp_y < 0):
+					if(tmp_y < -16):
 						self.hp = 0
 
 				if(tmp_y > 256): #(SPR_MAX_Y)):
