@@ -10,6 +10,8 @@ DIR_LEFT = 16	#/* 縦では下 */
 DIR_UP   = 24	#/* 縦では左 */
 DIR_OFF = 32	#/* 縦では無 */
 
+SHOTCOUNT = 32
+
 sinwave = ( #[SINFREQ] = {
 			0,  1,  2,  3,  3,  4,  4,  4,  5,  5,  5,  5,  4,  4,  4,  3,  3,  2,  1,
 			0, -1, -2, -3, -3, -4, -4, -4, -5, -5, -5, -5, -4, -4, -4, -3, -3, -2, -1,
@@ -185,7 +187,7 @@ class EnemyBullet:
 
 # 敵クラス
 class Enemy:
-	def __init__(self, x, y, player_x, player_y, hp, type, chr, speed):
+	def __init__(self, enemies, x, y, player_x, player_y, hp, type, chr, speed, dir):
 		self.x = x
 		self.y = y
 		self.speed = speed
@@ -212,7 +214,29 @@ class Enemy:
 		self.chr = chr
 
 		self.dmg = False
-		self.teki_dir = 0
+#		self.teki_dir = DIR_DOWN
+		self.teki_dir = dir
+
+		self.enemies = enemies
+
+#		boss_tkappend(i, PAT_TEKI4, 6, DIR_DOWN - 4, 0);
+
+	def boss_tkappend(self, pat, move, dir, shot):
+#		self.teki_pat = pat;
+#		self.tkcount = 0;
+#		self.tkshotcount = SHOTCOUNT - 2;
+
+#		self.teki_move = move;
+		y = self.y;
+		x = self.x;
+
+		hp = 10;
+#		teki_pal[j] = CHRPAL_NO;
+#		self.teki_shotinfo = shot;
+#		self.teki_dir = dir;
+#		teki_num++;
+
+		self.enemies.append(Enemy(self.enemies, x, y, 0, 0, hp, pat, move, 1.5, dir))
 
 	def update(self, player_x, player_y, enemy_bullets, shot_c):
 		# 敵の動き
@@ -406,6 +430,86 @@ class Enemy:
 				if(tmp_y > 256): #(SPR_MAX_Y)):
 					self.hp = 0
 
+			elif self.chr == 6:
+			#6 LASER
+
+				dir = self.teki_dir
+				if(self.tkcount == 120):
+					dir = tekishot_dir(player_x, player_y, tmp_x, tmp_y)
+					self.teki_shotinfo = 0
+				elif(self.tkcount == 40+8):
+					dir = DIR_OFF
+					self.tkshotcount = SHOTCOUNT * 2;
+					self.teki_shotinfo = 3
+
+				self.teki_dir = dir
+				self.tkcount += 1
+
+				tmp_x +=  (direction[dir][0]) / (1 << 3)
+				tmp_y +=  (direction[dir][1]) / (1 << 3)
+
+
+				#/* 敵機画面外消去(下方向) */
+				if(tmp_y > (256)): #(SPR_MAX_Y)):
+					self.hp = 0
+				#/* 敵機画面外消去(上方向) */
+				if(tmp_y < 0):
+					if(direction[dir][1] < 0):
+						self.hp = 0
+
+				#/* 敵機画面外消去(左方向) */
+				if(tmp_x < 0):
+					self.hp = 0;
+
+				#/* 敵機画面外消去(右方向) */
+				if(tmp_x > (256)): #SPR_MAX_X))
+					self.hp = 0
+
+			elif self.chr == 9:
+			# 9 BOSS1
+				dir = self.teki_dir
+				self.tkcount += 1
+				if(self.tkcount == 40-8):
+					dir = DIR_RIGHT
+				elif((self.tkcount % 600) == 40-8):
+					self.tkshotcount = SHOTCOUNT * 3 / 2
+					dir = DIR_DOWN
+				elif(self.tkcount > 40):
+					if(dir == DIR_UP):
+						if(tmp_y < (48 - 16)):
+							dir = DIR_OFF
+							self.tkshotcount = SHOTCOUNT * 3 / 2;
+							self.boss_tkappend("PAT_TEKI4", 6, DIR_DOWN - 4, 0);
+							self.boss_tkappend("PAT_TEKI4", 6, DIR_DOWN + 4, 0);
+							self.boss_tkappend("PAT_TEKI4", 6, DIR_DOWN, 0);
+
+					elif(dir == DIR_RIGHT):
+						if(tmp_x > ((256 - 24 - 16))):
+							dir = DIR_LEFT
+
+					elif(dir == DIR_DOWN):
+						if(tmp_y > ((192+16))):
+							self.tkshotcount = SHOTCOUNT * 3 / 2
+							if(self.tkcount < 3500):
+#								print(f"{self.tkcount}")
+								dir = DIR_UP
+
+					elif(dir == DIR_LEFT):
+						if(tmp_x < (40 - 16)):
+							dir = DIR_RIGHT
+
+					elif(dir == DIR_OFF):
+						if((self.tkcount % 200) == 50):
+							dir = DIR_LEFT
+
+				#/* 敵機画面外消去(下方向) */
+				if(tmp_y > 256):
+					self.hp = 0
+
+				tmp_x +=  (direction[dir][0]) / (1 << 3)
+				tmp_y +=  (direction[dir][1]) / (1 << 3)
+				self.teki_dir = dir;
+
 			else:
 				tmp_x = self.x
 				tmp_y = self.y + self.speed
@@ -448,14 +552,24 @@ class Enemy:
 
 			self.shoot_timer = 0
 
+#		for enemy in self.enemies:
+#			enemy.update(self.enemies, player_x, player_y, enemy_bullets, shot_c)
+
 	# 敵の描画
 	def draw(self):
 		if(self.dmg == True):
 			for i in range(1,15):
 				pyxel.pal(i,8)
-		pyxel.blt(self.x, self.y, 2, self.pat * 16, 32, 16, 16, 0) #14)
+		if(self.type == "PAT_BOSS1"):
+			pyxel.blt(self.x-24, self.y-8, 2, 0, 32+16, 64, 32, 0) #14)
+		else:
+			pyxel.blt(self.x, self.y, 2, self.pat * 16, 32, 16, 16, 0) #14)
 		pyxel.pal()
 #		self.dmg = False
+
+#		for enemy in self.enemies:
+#			enemy.draw()
+
 
 # ゲームクラス#################################################################
 
@@ -541,7 +655,7 @@ class App:
 			x = int(event['event_2'])*256/144-16
 			y = int(event['event_3']) #-16
 			hp = int(event['event_4'])
-			self.enemies.append(Enemy(x, y, self.player_x, self.player_y, hp, type, chr, 1.5))
+			self.enemies.append(Enemy(self.enemies, x, y, self.player_x, self.player_y, hp, type, chr, 1.5, DIR_DOWN))
 #		elif(com == "COM_BGMCHANGE"):
 #			print(f"曲変更")
 #		elif(com == "COM_BGMFADEOUT"):
