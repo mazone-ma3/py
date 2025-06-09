@@ -10,6 +10,8 @@ DIR_LEFT = 16	#/* 縦では下 */
 DIR_UP   = 24	#/* 縦では左 */
 DIR_OFF = 32	#/* 縦では無 */
 
+URAMAX = 4
+
 SHOTCOUNT = 32
 
 sinwave = ( #[SINFREQ] = {
@@ -192,7 +194,7 @@ class EnemyBullet:
 
 # 敵クラス
 class Enemy:
-	def __init__(self, enemies, x, y, player_x, player_y, hp, type, chr, speed, dir, shotinfo):
+	def __init__(self, enemies, x, y, player_x, player_y, hp, type, chr, speed, dir, shotinfo, shot_c):
 		self.x = x
 		self.y = y
 		self.speed = speed
@@ -202,6 +204,7 @@ class Enemy:
 		self.dmgtime = 0
 		self.tkcount = 0
 		self.teki_shotinfo = shotinfo
+		self.shot_c = shot_c
 
 		# キャラデータを変換
 		if(type == "PAT_TEKI3"):
@@ -242,9 +245,10 @@ class Enemy:
 #		self.teki_dir = dir;
 #		teki_num++;
 
-		self.enemies.append(Enemy(self.enemies, x, y, 0, 0, hp, pat, move, 1.5, dir, shotinfo))
+		self.enemies.append(Enemy(self.enemies, x, y, 0, 0, hp, pat, move, 1.5, dir, shotinfo, self.shot_c))
 
-	def update(self, player_x, player_y, enemy_bullets, shot_c):
+	def update(self, player_x, player_y, enemy_bullets, uramode):
+
 		# 敵の動き
 		if self.chr != 0:
 #			self.tkshotcount += 1
@@ -538,7 +542,7 @@ class Enemy:
 				self.hp = 0
 
 		# 敵弾を発射する
-		if (self.dmgtime == 0):	# and (self.tkshotcount >= shot_c): #(6 << 3): #30:
+		if (self.dmgtime == 0):	# and (self.tkshotcount >= self.shot_c): #(6 << 3): #30:
 #			player_center_x = player_x + 8
 #			player_center_y = player_y + 8
 #			enemy_center_x = self.x + 8
@@ -557,10 +561,14 @@ class Enemy:
 					self.tkshotcount -= 1
 				else:
 					dir = tekishot_dir(player_x, player_y, self.x, self.y)
-					dx = direction[dir][0] / (1 << 3)
-					dy = direction[dir][1] / (1 << 3)
+					if(uramode > 1):
+						dx = direction[dir][0] * 3 / 2 / (1 << 3)
+						dy = direction[dir][1] * 3 / 2 / (1 << 3)
+					else:
+						dx = direction[dir][0] / (1 << 3)
+						dy = direction[dir][1] / (1 << 3)
 					enemy_bullets.append(EnemyBullet(self.x + (4) + dx, self.y + (4) + dy, dx, dy, 1, 0))
-					self.tkshotcount = shot_c
+					self.tkshotcount = self.shot_c
 			elif(self.teki_shotinfo == 1):
 				#3WAY
 				if(self.tkshotcount != 0):
@@ -578,7 +586,7 @@ class Enemy:
 					dx = direction[dir2][0] / (1 << 3)
 					dy = direction[dir2][1] / (1 << 3)
 					enemy_bullets.append(EnemyBullet(self.x + (4) + dx, self.y + (4) + dy, dx, dy, 1, 0))
-					self.tkshotcount = shot_c
+					self.tkshotcount = self.shot_c
 
 			elif(self.teki_shotinfo == 2):
 				#RANDOM
@@ -589,7 +597,7 @@ class Enemy:
 					dx = direction[dir][0] / (1 << 3)
 					dy = direction[dir][1] / (1 << 3)
 					enemy_bullets.append(EnemyBullet(self.x + (4) + dx, self.y + (4) + dy, dx, dy, 1, 0))
-					self.tkshotcount = shot_c
+					self.tkshotcount = self.shot_c
 			elif(self.teki_shotinfo == 3):
 				#LASER
 				if(self.tkshotcount != 0):
@@ -603,7 +611,7 @@ class Enemy:
 
 
 #		for enemy in self.enemies:
-#			enemy.update(self.enemies, player_x, player_y, enemy_bullets, shot_c)
+#			enemy.update(self.enemies, player_x, player_y, enemy_bullets, self.shot_c)
 
 	# 敵の描画
 	def draw(self):
@@ -646,19 +654,63 @@ class App:
 		self.str_temp = ""
 		self.score = 0
 		self.hiscore = 5000
+		self.uramode = 0
 
-		self.my_hp = 7
+		self.max_my_hp = 7
+		self.my_hp = self.max_my_hp
 		self.y = 1
 		self.count = 0
+		self.noshotdmg_flag = False
 
 # pyxel.colors.from_list([0x111111, 0x222222, 0x333333]); pyxel.colors[15] = 0x112233
-
 		# 星の初期化
 		self.stars = [Star(i * (256 / self.starnums)) for i in range(self.starnums)]
 		self.trgcount = 0
 
 		pyxel.run(self.update, self.draw)
 
+
+	# データ初期化 ############################################################
+	def initdata(self, mode):
+		self.player_x = 128 - 16
+		self.player_y = 120 #- 16
+
+		self.player_xx = 0
+		self.player_yy = 0
+		self.player_type = 0
+
+		self.player_bullets = []
+		self.enemies = []
+		self.enemy_bullets = []
+
+		self.score = 0
+#		self.game_over = True
+
+		self.stage = 0
+		self.schedule_index = 0
+		self.current_time = 0
+		self.com = "COM_DUMMY"
+
+		self.max_my_hp = 7
+		self.my_hp = self.max_my_hp
+		self.my_dmg = False
+		self.mypal_dmgtime = 0
+		self.shot_c = 6 << 3
+		self.noshotdmg_flag = False
+
+		if(mode == 1):
+			self.stage = 3;
+			self.max_my_hp = 10;
+			self.my_hp = self.max_my_hp
+			self.shot_c /= 6;
+			self.score = 1;
+#//			renshaflag = TRUE;
+		elif(mode == 2):
+			self.score = 2;
+			self.max_my_hp = 10;
+			self.my_hp = self.max_my_hp
+#//			renshaflag = TRUE;
+#//			renshaflag = FALSE;
 
 	# スケジュールデータを読み込む
 	def load_schedule(self, file_path):
@@ -682,7 +734,7 @@ class App:
 		return schedule #sorted(schedule, key=lambda x: x['time'])  # 時間順にソート
 
 	# イベントを処理する関数
-	def process_event(self, event):
+	def process_event(self, event, uramode):
 #		print(f"Time: {event['time']}s, Event: {event['event_type']}, Details: {event['details']}")
 
 		message = "                 ","     WARNING     ","STAGE "
@@ -708,7 +760,8 @@ class App:
 			y = int(event['event_3']) #-16
 			hp = int(event['event_4'])
 			shotinfo = int(event['event_5'])
-			self.enemies.append(Enemy(self.enemies, x, y, self.player_x, self.player_y, hp, type, chr, 1.5, DIR_DOWN, shotinfo))
+			shot_c = SHOTCOUNT - 2
+			self.enemies.append(Enemy(self.enemies, x, y, self.player_x, self.player_y, hp, type, chr, 1.5, DIR_DOWN, shotinfo, self.shot_c))
 #		elif(com == "COM_BGMCHANGE"):
 #			print(f"曲変更")
 #		elif(com == "COM_BGMFADEOUT"):
@@ -730,13 +783,35 @@ class App:
 			self.message = message[2] + str(self.stage)
 			self.message_x = x
 			self.message_y = y
-			self.my_hp = 7
-			self.shot_c = self.shot_c / 2
+#			self.my_hp = 7
+#			self.shot_c = self.shot_c / 2
 
 #			print(f"次のステージへ")
 		elif(com == "COM_END"):
 			self.current_time = 1
 			self.schedule_index = -1
+
+			if(int(self.shot_c) > (1 << 3)):
+				self.shot_c = int(self.shot_c / 2)
+#				print(f"{self.shot_c}")
+			else:
+				if(self.uramode != URAMAX):
+					self.uramode += 1
+					if(self.uramode != URAMAX):
+						self.shot_c = (6 << 3)
+					else:
+						self.shot_c = 0
+			if(self.noshotdmg_flag == False):	#/* PACIFIST */
+				self.score += 10000
+#				seflag = 4;
+#				pyxel.play(3,16,0,False,True)
+#				self.noshotdmg_flag = False;
+
+			if(self.my_hp < self.max_my_hp):
+				self.my_hp = self.max_my_hp;
+			else:
+				self.my_hp += 1;
+
 #			print(f"終了")
 		elif(com == "COM_SE"):
 			x = int(event['event_0'])
@@ -862,32 +937,6 @@ class App:
 
 			pyxel.colors[palno] =((r2) << 16) | (((g2) << 8)) | (( b2))
 
-	# データ初期化 ############################################################
-	def initdata(self):
-		self.player_x = 128 - 16
-		self.player_y = 120 #- 16
-
-		self.player_xx = 0
-		self.player_yy = 0
-		self.player_type = 0
-
-		self.player_bullets = []
-		self.enemies = []
-		self.enemy_bullets = []
-
-		self.score = 0
-#		self.game_over = True
-
-		self.stage = 0
-		self.schedule_index = 0
-		self.current_time = 0
-		self.com = "COM_DUMMY"
-		self.my_hp = 7
-		self.my_dmg = False
-		self.mypal_dmgtime = 0
-
-		self.shot_c = 6 << 3
-
 	# メインループ
 	def update(self):
 		if pyxel.btnp(pyxel.KEY_ESCAPE):
@@ -918,7 +967,13 @@ class App:
 				self.y = 1
 			if pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_START): # or pyxel.btnv(GAMEPAD1_AXIS_TRIGGERLEFT) != 0:
 				if(self.y == 1):
-					self.initdata()
+					mode = 0
+					if(pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT)):
+						mode = 2
+					if(pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT)):
+						mode = 1
+
+					self.initdata(mode)
 					self.logox = 0
 					self.scene = "DEMO"
 					pyxel.playm(0, 0,True)
@@ -942,6 +997,7 @@ class App:
 					self.scene = "GAME"
 
 		elif self.scene == "GAME":
+			self.do_schedule()
 
 			if pyxel.btnp(pyxel.KEY_X) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):
 				self.scene = "PAUSE"
@@ -975,6 +1031,7 @@ class App:
 				if(self.trgcount > 0):
 					self.trgcount = self.trgcount - 1
 				if pyxel.btn(pyxel.KEY_SPACE) or pyxel.btn(pyxel.KEY_Z) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_A):
+					self.noshotdmg_flag = True;
 					if(self.trgcount == 0):
 						self.trgcount = 5
 						self.player_bullets.append(PlayerBullet(self.player_x + 1, self.player_y + 4))
@@ -989,7 +1046,7 @@ class App:
 
 				# 敵の更新
 				for enemy in self.enemies[:]:
-					enemy.update(self.player_x, self.player_y, self.enemy_bullets, self.shot_c)
+					enemy.update(self.player_x, self.player_y, self.enemy_bullets, self.uramode)
 					if enemy.y > 256:
 						self.enemies.remove(enemy)
 
@@ -1050,6 +1107,7 @@ class App:
 							enemy.y < self.player_y + 9+1 and
 							enemy.y + 16 > self.player_y+9):
 							self.my_dmg = True
+							self.noshotdmg_flag = True
 #							pyxel.play(3,16,0,False,True)
 #							if(self.mypal_dmgtime == 0):
 #							self.my_hp = self.my_hp - 1
@@ -1062,6 +1120,7 @@ class App:
 							self.player_y + 9 + 1 > bullet.y):
 							self.enemy_bullets.remove(bullet)
 							self.my_dmg = True
+							self.noshotdmg_flag = True
 #							self.my_hp = self.my_hp - 1
 #							pyxel.play(3,16,0,False,True)
 
@@ -1082,11 +1141,11 @@ class App:
 #					if(self.mypal_dmgtime <= 0):
 #						self.my_dmg = False
 
-				self.do_schedule()
+#				self.do_schedule()
 
 		elif self.scene == "CONTINUE":
 			if pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A):
-				self.my_hp = 7
+				self.my_hp = self.max_my_hp
 				self.scene = "GAME"
 				self.mypal_dmgtime = 3 * 4 #DMGTIME * 4;
 				self.noshotdmg_flag = True
@@ -1126,7 +1185,7 @@ class App:
 
 			self.event = self.schedule[self.schedule_index]
 #			self.com = event.
-			self.process_event(self.event)
+			self.process_event(self.event, self.uramode)
 			self.schedule_index = self.schedule_index + 1
 			if self.schedule_index >= len(self.schedule):
 				self.schedule_index = 0
