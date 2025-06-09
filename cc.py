@@ -192,7 +192,7 @@ class EnemyBullet:
 #		pyxel.rectb(self.x, self.y, self.w, self.h, 0)
 
 
-# 敵クラス
+#敵クラス
 class Enemy:
 	def __init__(self, enemies, x, y, player_x, player_y, hp, type, chr, speed, dir, shotinfo, shot_c):
 		self.x = x
@@ -479,7 +479,7 @@ class Enemy:
 			# 9 BOSS1
 				dir = self.teki_dir
 				self.tkcount += 1
-				if(self.tkcount == 40-8):
+				if(self.tkcount == 40+4):
 					dir = DIR_RIGHT
 				elif((self.tkcount % 600) == 40-8):
 					self.tkshotcount = SHOTCOUNT * 3 / 2
@@ -513,7 +513,7 @@ class Enemy:
 							dir = DIR_LEFT
 
 				#/* 敵機画面外消去(下方向) */
-				if(tmp_y > 256):
+				if(tmp_y > 256+8):
 					self.hp = 0
 
 				tmp_x +=  (direction[dir][0]) / (1 << 3)
@@ -757,7 +757,7 @@ class App:
 			type = (event['event_0'])
 			chr = int(event['event_1'])
 			x = int(event['event_2'])*256/144-16
-			y = int(event['event_3']) #-16
+			y = int(event['event_3']) -16
 			hp = int(event['event_4'])
 			shotinfo = int(event['event_5'])
 			shot_c = SHOTCOUNT - 2
