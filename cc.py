@@ -804,7 +804,7 @@ class App:
 			if(self.noshotdmg_flag == False):	#/* PACIFIST */
 				self.score += 10000
 #				seflag = 4;
-#				pyxel.play(3,16,0,False,True)
+				pyxel.play(3,17,0,False,True)
 #				self.noshotdmg_flag = False;
 
 			if(self.my_hp < self.max_my_hp):
