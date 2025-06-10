@@ -247,6 +247,34 @@ class Enemy:
 
 		self.enemies.append(Enemy(self.enemies, x, y, 0, 0, hp, pat, move, 1.5, dir, shotinfo, self.shot_c))
 
+
+
+	def shottome2(self, player_x, player_y, dir, pat, enemy_bullets, uramode):
+#		if(self.tkshotcount != 0):
+#			self.tkshotcount -= 1
+#		else:
+#		dir = tekishot_dir(player_x, player_y, self.x, self.y)
+		if(uramode > 1):
+			dx = direction[dir][0] * 3 / 2 / (1 << 3)
+			dy = direction[dir][1] * 3 / 2 / (1 << 3)
+		else:
+			dx = direction[dir][0] / (1 << 3)
+			dy = direction[dir][1] / (1 << 3)
+		enemy_bullets.append(EnemyBullet(self.x + (4) + dx, self.y + (4) + dy, dx, dy, 1, 0))
+		self.tkshotcount = self.shot_c
+
+
+	def check_revshot(self, player_x, player_y, enemy_bullets, uramode):
+		dir = tekishot_dir(player_x, player_y, self.x, self.y)
+		if(uramode > 2):
+#			print(f"{uramode}")
+			self.shottome2(player_x, player_y, dir, 0, enemy_bullets, uramode)
+			self.shottome2(player_x, player_y, (dir + 2) % 32, 0, enemy_bullets, uramode)
+			self.shottome2(player_x, player_y, (dir - 2 + 32) % 32, 0, enemy_bullets, uramode)
+		else:
+			self.shottome2(player_x, player_y, dir, 0, enemy_bullets, uramode)
+
+
 	def update(self, player_x, player_y, enemy_bullets, uramode):
 
 		# 敵の動き
@@ -463,12 +491,12 @@ class Enemy:
 				if(tmp_y > (256)): #(SPR_MAX_Y)):
 					self.hp = 0
 				#/* 敵機画面外消去(上方向) */
-				if(tmp_y < 0):
+				if(tmp_y < -16):
 					if(direction[dir][1] < 0):
 						self.hp = 0
 
 				#/* 敵機画面外消去(左方向) */
-				if(tmp_x < 0):
+				if(tmp_x < -16):
 					self.hp = 0;
 
 				#/* 敵機画面外消去(右方向) */
@@ -537,8 +565,14 @@ class Enemy:
 				self.pat = 1
 			elif(self.dmgtime ==10):
 				self.pat = 2
-#			elif(self.dmgtime ==13):
+				if(uramode > 0):
+					self.check_revshot(player_x, player_y, enemy_bullets, uramode)
+			elif(self.dmgtime ==13):
+				if(uramode > 0):
+					self.check_revshot(player_x, player_y, enemy_bullets, uramode)
 			elif(self.dmgtime ==15):
+				if(uramode > 0):
+					self.check_revshot(player_x, player_y, enemy_bullets, uramode)
 				self.hp = 0
 
 		# 敵弾を発射する
@@ -593,7 +627,7 @@ class Enemy:
 				if(self.tkshotcount != 0):
 					self.tkshotcount -= 1
 				else:
-					dir = rand() % 32
+					dir = random.randint(0, 32) #int(random.random()) % 32
 					dx = direction[dir][0] / (1 << 3)
 					dy = direction[dir][1] / (1 << 3)
 					enemy_bullets.append(EnemyBullet(self.x + (4) + dx, self.y + (4) + dy, dx, dy, 1, 0))
@@ -697,6 +731,8 @@ class App:
 		self.mypal_dmgtime = 0
 		self.shot_c = 6 << 3
 		self.noshotdmg_flag = False
+
+		self.uramode = 0
 
 		if(mode == 1):
 			self.stage = 3;
@@ -958,27 +994,60 @@ class App:
 			self.colorvalue = self.colorvalue - 1
 			if(self.colorvalue == 0):
 				self.scene = "TITLE"
+				self.count = 0
 #			self.changepal(self.colorvalue)
 
 		elif self.scene == "TITLE":
-			if (pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN)):
-				self.y = 0
-			if (pyxel.btn(pyxel.KEY_UP) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_UP)):
-				self.y = 1
-			if pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_START): # or pyxel.btnv(GAMEPAD1_AXIS_TRIGGERLEFT) != 0:
-				if(self.y == 1):
-					mode = 0
-					if(pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT)):
-						mode = 2
-					if(pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT)):
-						mode = 1
+			if(self.count < 30*60):
+				self.count += 1
+				if (pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN)):
+					self.y = 0
+					self.count = 0
+				if (pyxel.btn(pyxel.KEY_UP) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_UP)):
+					self.y = 1
+					self.count = 0
+				if pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_START): # or pyxel.btnv(GAMEPAD1_AXIS_TRIGGERLEFT) != 0:
+					if(self.y == 1):
+						mode = 0
+						if(pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT)):
+							mode = 2
+						if(pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT)):
+							mode = 1
 
-					self.initdata(mode)
-					self.logox = 0
-					self.scene = "DEMO"
-					pyxel.playm(0, 0,True)
-				else:
-					pyxel.quit()
+						self.initdata(mode)
+						self.logox = 0
+						self.scene = "DEMO"
+						pyxel.playm(0, 0,True)
+					else:
+						pyxel.quit()
+			else:
+				self.scene = "TITLEFADE"
+
+		elif self.scene == "TITLEFADE":
+			if(self.colorvalue < 255):
+				self.colorvalue = self.colorvalue + 1
+			else:
+				self.scene = "MESSAGEIN"
+
+		elif self.scene == "MESSAGEIN":
+			if(self.colorvalue > 0):
+				self.colorvalue = self.colorvalue - 1
+			else:
+				self.count = 0
+				self.scene = "MESSAGE"
+
+		elif self.scene == "MESSAGE":
+			if(self.count >= 2*60) or pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_START):
+				self.scene = "MESSAGEFADE"
+			else:
+				self.count += 1
+
+		elif self.scene == "MESSAGEFADE":
+			if(self.colorvalue < 255):
+				self.colorvalue = self.colorvalue + 1
+			else:
+				self.scene = "OPENING"
+
 
 		elif self.scene == "PAUSE":
 
@@ -1070,6 +1139,12 @@ class App:
 								enemy.dmgtime = 1
 								enemy.dmg = True
 								self.player_bullets.remove(bullet)
+
+								if(self.uramode):
+#									enemy.shottome2(tekishot_dir(), PAT_TKSHOT1);
+									dir = tekishot_dir(self.player_x, self.player_y, enemy.x, enemy.y)
+									enemy.shottome2(self.player_x, self.player_y, dir, 0, self.enemy_bullets, self.uramode)
+
 								break
 
 				for enemy in self.enemies[:]:
@@ -1199,6 +1274,12 @@ class App:
 	def draw(self):
 		pyxel.cls(0)
 
+		if self.scene == "MESSAGEIN" or self.scene == "MESSAGE" or self.scene == "MESSAGEFADE":
+			self.put_strings(16, 11, "PROJECT CC")
+			self.put_strings(14, 11, "SINCE 199X")
+			self.changepal(self.colorvalue)
+			return
+
 		# 星の更新
 		if self.scene != "PAUSE":
 			for star in self.stars:
@@ -1207,10 +1288,10 @@ class App:
 		for star in self.stars:
 			star.draw()
 
-		if self.scene == "TITLE" or self.scene == "OPENING":
+		if self.scene == "TITLE" or self.scene == "OPENING" or self.scene == "TITLEFADE":
 
 			# タイトル画面
-			if self.scene == "TITLE":
+			if self.scene == "TITLE" or self.scene == "TITLEFADE":
 #				pyxel.text(100, 160, "Press SPACE KEY", 7)
 #				pyxel.text(100, 200, "(c) ma-Zone 2025", 7)
 				self.put_title()
