@@ -507,12 +507,12 @@ class Enemy:
 			# 9 BOSS1
 				dir = self.teki_dir
 				self.tkcount += 1
-				if(self.tkcount == 40+4):
+				if(self.tkcount == (40+4)):
 					dir = DIR_RIGHT
-				elif((self.tkcount % 600) == 40-8):
+				elif((self.tkcount % 600) == (40+4)):
 					self.tkshotcount = SHOTCOUNT * 3 / 2
 					dir = DIR_DOWN
-				elif(self.tkcount > 40):
+				elif(self.tkcount > 40+4):
 					if(dir == DIR_UP):
 						if(tmp_y < (48 - 16)):
 							dir = DIR_OFF
@@ -1281,7 +1281,7 @@ class App:
 			return
 
 		# 星の更新
-		if self.scene != "PAUSE":
+		if self.scene != "PAUSE" and self.scene != "CONTINUE":
 			for star in self.stars:
 				star.update()
 
