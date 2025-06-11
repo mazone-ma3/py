@@ -161,7 +161,7 @@ class PlayerBullet:
 		self.y -= self.speed
 
 	def draw(self):
-		pyxel.blt(self.x, self.y, 2, 0, 16, 8, 8, 0)
+		pyxel.blt(self.x, self.y, 2, 0, 16, 8, 8, 2)
 #		pyxel.rect(self.x, self.y, self.w, self.h, 13)
 #		pyxel.rectb(self.x, self.y, self.w, self.h, 0)
 
@@ -185,9 +185,9 @@ class EnemyBullet:
 	def draw(self):
 		if(self.chr == 1):
 			# LASER
-			pyxel.blt(self.x-4, self.y, 2, 16, 16, 16, 16, 0)
+			pyxel.blt(self.x-4, self.y, 2, 16, 16, 16, 16, 2)
 		else:
-			pyxel.blt(self.x, self.y, 2, 8, 16, 8, 8, 0)
+			pyxel.blt(self.x, self.y, 2, 8, 16, 8, 8, 2)
 #		pyxel.rect(self.x, self.y, self.w, self.h, 8)
 #		pyxel.rectb(self.x, self.y, self.w, self.h, 0)
 
@@ -653,9 +653,9 @@ class Enemy:
 			for i in range(1,15):
 				pyxel.pal(i,8)
 		if(self.type == "PAT_BOSS1"):
-			pyxel.blt(self.x-24, self.y-8, 2, 0, 32+16, 64, 32, 0) #14)
+			pyxel.blt(self.x-24, self.y-8, 2, 0, 32+16, 64, 32, 2) #14)
 		else:
-			pyxel.blt(self.x, self.y, 2, self.pat * 16, 32, 16, 16, 0) #14)
+			pyxel.blt(self.x, self.y, 2, self.pat * 16, 32, 16, 16, 2) #14)
 		pyxel.pal()
 #		self.dmg = False
 
@@ -1328,7 +1328,7 @@ class App:
 				for i in range(1,15):
 					pyxel.pal(i,15)
 
-			pyxel.blt(self.player_x, self.player_y, 2, self.player_type * 24, 0, 24, 16, 0)
+			pyxel.blt(self.player_x, self.player_y, 2, self.player_type * 24, 0, 24, 16, 2)
 			pyxel.pal()
 #			self.my_dmg = False
 
