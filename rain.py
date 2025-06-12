@@ -901,11 +901,11 @@ class App:
 
 	# タイトル表示
 	def put_title(self):
-		self.put_strings(9, 14, "START")
-		self.put_strings(7, 14, "EXIT")
-		self.put_strings(4, 10, "      ij k   ")
-		self.put_strings(3, 10, "a2025 bcdefgh")
-		self.score_displayall()
+#		self.put_strings(9, 14, "START")
+#		self.put_strings(7, 14, "EXIT")
+#		self.put_strings(4, 10, "      ij k   ")
+#		self.put_strings(3, 10, "a2025 bcdefgh")
+#		self.score_displayall()
 		self.hiscore_display()
 
 	# 数字表示
@@ -949,7 +949,7 @@ class App:
 		self.put_numd(self.hiscore, 8)
 
 		self.put_strings(9, 12, "HIGH")
-		self.put_strings(9 + 15, 12, self.str_temp)
+		self.put_strings(9 + 5, 12, self.str_temp)
 
 	# シールドゲージ表示
 	def put_my_hp_dmg(self):
@@ -1349,7 +1349,7 @@ class App:
 			if self.scene == "TITLE" or self.scene == "TITLEFADE":
 #				pyxel.text(100, 160, "Press SPACE KEY", 7)
 #				pyxel.text(100, 200, "(c) ma-Zone 2025", 7)
-#				self.put_title()
+				self.put_title()
 #				self.y = 1
 #				self.put_strings(7 + self.y * 2, 11, "?")
 
