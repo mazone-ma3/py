@@ -1034,7 +1034,7 @@ class App:
 			if(self.count < 30*60):
 				self.count += 1
 				if (pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN)):
-					self.y = 0
+					self.y = 1 #0
 					self.count = 0
 				if (pyxel.btn(pyxel.KEY_UP) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_UP)):
 					self.y = 1
@@ -1053,6 +1053,9 @@ class App:
 						pyxel.playm(1, 0,True)
 					else:
 						pyxel.quit()
+				elif pyxel.btnp(pyxel.KEY_X) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):
+					pyxel.quit()
+
 			else:
 				self.scene = "TITLEFADE"
 
