@@ -1041,8 +1041,8 @@ class App:
 					self.y = 1
 					self.count = 0
 
-				if pyxel.btnp(pyxel.KEY_X) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B) or pyxel.btn(pyxel.MOUSE_BUTTON_LEFT):
-					self.keymode = 2
+				if pyxel.btnp(pyxel.KEY_X) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B) or pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
+					self.keymode = 1 #2
 
 				if pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_START): # or pyxel.btnv(GAMEPAD1_AXIS_TRIGGERLEFT) != 0:
 					self.keymode = 1
@@ -1192,7 +1192,7 @@ class App:
 				# プレイヤーの弾発射
 				if(self.trgcount > 0):
 					self.trgcount = self.trgcount - 1
-				if pyxel.btn(pyxel.KEY_SPACE) or pyxel.btn(pyxel.KEY_Z) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_A) or pyxel.btn(pyxel.MOUSE_BUTTON_LEFT) or pyxel.btn(pyxel.MOUSE_BUTTON_RIGHT):
+				if pyxel.btn(pyxel.KEY_SPACE) or pyxel.btn(pyxel.KEY_Z) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_A): # or pyxel.btn(pyxel.MOUSE_BUTTON_LEFT) or pyxel.btn(pyxel.MOUSE_BUTTON_RIGHT):
 					self.noshotdmg_flag = True;
 					if(self.trgcount == 0):
 						self.trgcount = 5
