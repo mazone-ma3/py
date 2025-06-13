@@ -1330,8 +1330,8 @@ class App:
 		pyxel.cls(0)
 
 		if self.scene == "MESSAGEIN" or self.scene == "MESSAGE" or self.scene == "MESSAGEFADE":
-			self.put_strings(16, 11, "PROJECT CC")
-			self.put_strings(14, 11, "SINCE 199X")
+			self.put_strings(11, 14, "PROJECT RAIN")
+			self.put_strings(11, 16, "SINCE 200X")
 			self.changepal(self.colorvalue)
 			return
 
