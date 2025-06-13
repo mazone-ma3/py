@@ -1031,6 +1031,7 @@ class App:
 #			self.changepal(self.colorvalue)
 
 		elif self.scene == "TITLE":
+			self.keymode = 0
 			if(self.count < 30*60):
 				self.count += 1
 				if (pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN)):
@@ -1039,7 +1040,14 @@ class App:
 				if (pyxel.btn(pyxel.KEY_UP) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_UP)):
 					self.y = 1
 					self.count = 0
+
+				if pyxel.btnp(pyxel.KEY_X) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B) or pyxel.btn(pyxel.MOUSE_BUTTON_LEFT):
+					self.keymode = 2
+
 				if pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_START): # or pyxel.btnv(GAMEPAD1_AXIS_TRIGGERLEFT) != 0:
+					self.keymode = 1
+
+				if(self.keymode != 0):
 					if(self.y == 1):
 						mode = 0
 						if(pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT)):
@@ -1053,8 +1061,8 @@ class App:
 						pyxel.playm(1, 0,True)
 					else:
 						pyxel.quit()
-				elif pyxel.btnp(pyxel.KEY_X) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):
-					pyxel.quit()
+#				elif pyxel.btnp(pyxel.KEY_X) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):
+#					pyxel.quit()
 
 			else:
 				self.scene = "TITLEFADE"
@@ -1109,9 +1117,43 @@ class App:
 			else:
 
 				# 自機移動
+				# タッチ風移動（仮：マウスでシミュレート）
+#				if pyxel.btn(pyxel.MOUSE_BUTTON_LEFT):
+#				mx, my = pyxel.mouse_x, pyxel.mouse_y
+#				# 移動：マウス位置に近づける（スマホのスワイプ風）
+#				if mx > self.player_x + 2:
+#					self.player_xx = 1
+#				elif mx < self.player_x - 2:
+#					self.player_xx = -1
+#				if my > self.player_y + 2:
+#					self.player_yy = 1
+#				elif my < self.player_y - 2:
+#					self.player_yy = -1
+
+#				if ((self.player_xx == 0) or (self.player_yy == 0)):
+#					self.player_xx *= 3
+#					self.player_yy *= 3
+#				else:
+#					self.player_xx *= 2
+#					self.player_yy *= 2
+
+#				if ((self.player_xx == 0) and (self.player_yy == 0)):
+#				else:
+
 				self.player_xx = (pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT)) - (pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT))
 
 				self.player_yy = (pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN)) - (pyxel.btn(pyxel.KEY_UP) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_UP))
+
+				if ((self.player_xx == 0) or (self.player_yy == 0)):
+					self.player_xx *= 3
+					self.player_yy *= 3
+				else:
+					if(self.keymode == 2):
+						self.player_xx *= 0
+						self.player_yy *= 0
+					else:
+						self.player_xx *= 2
+						self.player_yy *= 2
 
 				self.player_type = PAT_JIKI_N
 				if(self.player_xx > 0):
@@ -1141,23 +1183,16 @@ class App:
 				if(self.player_yy != 0):
 					self.player_type = PAT_JIKI_J;
 
-				if ((self.player_xx == 0) or (self.player_yy == 0)):
-					self.player_xx *= 3
-					self.player_yy *= 3
-				else:
-					self.player_xx *= 2
-					self.player_yy *= 2
-
 				self.player_x += self.player_xx
 				self.player_x = max(0, min(self.player_x, 256 - 16)) #24 + 4))
 
 				self.player_y += self.player_yy
-				self.player_y = max(0, min(self.player_y, 16 * 8))#256 - 16))
+				self.player_y = max(16, min(self.player_y, 16 * 8))#256 - 16))
 
 				# プレイヤーの弾発射
 				if(self.trgcount > 0):
 					self.trgcount = self.trgcount - 1
-				if pyxel.btn(pyxel.KEY_SPACE) or pyxel.btn(pyxel.KEY_Z) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_A):
+				if pyxel.btn(pyxel.KEY_SPACE) or pyxel.btn(pyxel.KEY_Z) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_A) or pyxel.btn(pyxel.MOUSE_BUTTON_LEFT) or pyxel.btn(pyxel.MOUSE_BUTTON_RIGHT):
 					self.noshotdmg_flag = True;
 					if(self.trgcount == 0):
 						self.trgcount = 5
