@@ -1048,6 +1048,7 @@ class App:
 					self.keymode = 1
 
 				if(self.keymode != 0):
+
 					if(self.y == 1):
 						mode = 0
 						if(pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT)):
@@ -1057,15 +1058,18 @@ class App:
 
 						self.initdata(mode)
 						self.logox = 0
-						self.scene = "GAME" #"DEMO"
-						pyxel.playm(1, 0,True)
+						self.scene = "KEYFRASH" #"DEMO"
 					else:
 						pyxel.quit()
 #				elif pyxel.btnp(pyxel.KEY_X) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):
 #					pyxel.quit()
-
 			else:
 				self.scene = "TITLEFADE"
+
+		elif self.scene == "KEYFRASH":
+			if (pyxel.btn(pyxel.KEY_Z) or pyxel.btn(pyxel.KEY_SPACE) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_A) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_START)) == False: # or pyxel.btnv(GAMEPAD1_AXIS_TRIGGERLEFT) != 0:
+				pyxel.playm(1, 0,True)
+				self.scene = "GAME"
 
 		elif self.scene == "TITLEFADE":
 			if(self.colorvalue < 255):
@@ -1374,17 +1378,17 @@ class App:
 			return
 
 		# 星の更新
-		if self.scene != "PAUSE" and self.scene != "CONTINUE":
+		if self.scene != "PAUSE" and self.scene != "CONTINUE":  #and self.scene != "KEYFRASH":
 			for star in self.stars:
 				star.update()
 
 		for star in self.stars:
 			star.draw()
 
-		if self.scene == "TITLE" or self.scene == "OPENING" or self.scene == "TITLEFADE":
+		if self.scene == "TITLE" or self.scene == "OPENING" or self.scene == "TITLEFADE" or self.scene == "KEYFRASH":
 
 			# タイトル画面
-			if self.scene == "TITLE" or self.scene == "TITLEFADE":
+			if self.scene == "TITLE" or self.scene == "TITLEFADE" or self.scene == "KEYFRASH":
 #				pyxel.text(100, 160, "Press SPACE KEY", 7)
 #				pyxel.text(100, 200, "(c) ma-Zone 2025", 7)
 				self.put_title()
