@@ -928,7 +928,7 @@ class App:
 	def score_display(self):
 		self.put_numd(self.score, 8)
 		self.put_strings(15, 22, self.str_temp)
-		if(self.score >= self.hiscore) and((self.score % 10) == 0):
+		if(self.score >= self.hiscore) and ((self.score % 10) == 0):
 			self.hiscore = self.score
 			self.put_strings(8, 22, "HIGH ")
 		else:
