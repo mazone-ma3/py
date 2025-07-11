@@ -928,16 +928,16 @@ class App:
 	def score_display(self):
 		self.put_numd(self.score, 8)
 		self.put_strings(15, 22, self.str_temp)
-		if(self.score >= self.hiscore):
-			if((self.score % 10) == 0):
-				self.hiscore = self.score
-				self.put_strings(8, 22, "HIGH ")
+		if(self.score >= self.hiscore) and((self.score % 10) == 0):
+			self.hiscore = self.score
+			self.put_strings(8, 22, "HIGH ")
 		else:
 			self.put_strings(8, 22, "SCORE")
 
 	# スコア全表示
 	def score_displayall(self):
-#		self.put_strings(28, 2, "SCORE")
+#		if(self.score < self.hiscore):
+#			self.put_strings(8, 22, "SCORE")
 		self.score_display()
 
 	# ハイスコア表示
