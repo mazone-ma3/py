@@ -86,9 +86,9 @@ class Reversi:
                 self.black = sum(sum(1 for c in row if c==1) for row in self.board)
                 self.white = 64 - self.black
                 if self.black > self.white:
-                    self.result = "黒の勝ち！"
+                    self.result = "Black Win!"
                 elif self.white > self.black:
-                    self.result = "白の勝ち！"
+                    self.result = "White Win!"
                 else:
                     self.result = "引き分け"
 #                pyxel.rect(40, 120, 80, 30, 8)
@@ -125,7 +125,7 @@ class Reversi:
             pyxel.rect(45, 65, 80, 30, 8)
             pyxel.text(50, 70, "Game Over", 7)
             pyxel.text(50, 85, f"Black {self.black} － White {self.white}", 7)
-            pyxel.text(50, 100, self.result, 7)
+            pyxel.text(50, 100, self.result, 8)
             pyxel.text(50, 130, "Retry?", 8)
 
 Reversi()
