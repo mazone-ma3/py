@@ -114,7 +114,7 @@ class PlusTaker:
 		# 衝突: 弾 vs 敵
 		for b in self.bullets[:]:
 			for e in self.enemies[:]:
-				if abs(b[0] - e[0]) < 12 and abs(b[1] - e[1]) < 12:
+				if abs(b[0] - e[0]) < 16 and abs(b[1] - e[1]) < 16:
 					self.bullets.remove(b)
 					self.enemies.remove(e)
 					self.pluses.append([e[0], e[1]])
@@ -133,7 +133,7 @@ class PlusTaker:
 			if p[1] > 120:
 				self.pluses.remove(p)
 				self.combo_timer = 60  # 取り逃しで即リセット
-			elif abs(p[0] - self.player_x) < 12 and abs(p[1] - self.player_y) < 12:
+			elif abs(p[0] - self.player_x) < 16 and abs(p[1] - self.player_y) < 16:
 				self.pluses.remove(p)
 				self.score += 50 * self.combo
 				self.combo_timer = 0
