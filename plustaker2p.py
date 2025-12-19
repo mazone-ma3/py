@@ -159,7 +159,8 @@ class PlusTaker:
 			else:
 				self.put_strings(4, 12, f"HIGH:  {self.high_score:06d}") #, 7 if self.score < self.high_score else 11)
 #			self.put_strings(4, 13, f"WAVE: {self.wave}") #, 9)
-			self.put_strings(4, 14, f"COMBO: x{self.combo}") #, 11 if self.combo > 0 else 7)
+			if self.combo:
+				self.put_strings(4, 14, f"COMBO: x{self.combo}") #, 11 if self.combo > 0 else 7)
 #			pyxel.text(5, 110, "ARROW/WASD: MOVE  SPACE/Z: SHOOT  R:RETRY", 6)
 
 		# プレイヤー (青三角)
