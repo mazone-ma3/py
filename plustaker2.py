@@ -11,7 +11,7 @@ class PlusTaker:
         pyxel.sound(1).set("g3c4e4", "t", "765", "f", 15)    # 撃破: ドンッ
         pyxel.sound(2).set("c4e4g4c4", "p", "7777", "n", 12) # Plus: キラキラ
         
-        self.high_score = 0
+        self.high_score = 5000
         self.reset_game()
         pyxel.run(self.update, self.draw)
 
@@ -28,10 +28,10 @@ class PlusTaker:
         self.kills = 0
         self.spawn_timer = 0
         self.game_over = False
-        if self.score > self.high_score:
-            self.high_score = self.score
 
     def update(self):
+        if self.score > self.high_score:
+            self.high_score = self.score
         if self.game_over:
             if pyxel.btnp(pyxel.KEY_R):
                 self.reset_game()
@@ -119,7 +119,7 @@ class PlusTaker:
         if self.game_over:
             pyxel.text(55, 45, "GAME OVER", pyxel.frame_count % 16 < 8 and 8 or 10)
             pyxel.text(45, 60, f"SCORE: {self.score:06d}", 7)
-            pyxel.text(45, 70, f"HIGH: {self.high_score:06d}", 11 if self.score > self.high_score else 7)
+            pyxel.text(45, 70, f"HIGH: {self.high_score:06d}", 7 if self.score < self.high_score else 11)
             pyxel.text(50, 85, f"WAVE REACHED: {self.wave}", 7)
             pyxel.text(40, 100, "Press R to Retry", 7)
             return
@@ -143,7 +143,7 @@ class PlusTaker:
 
         # UI
         pyxel.text(5, 5, f"SCORE: {self.score:06d}", 7)
-        pyxel.text(5, 16, f"HIGH: {self.high_score:06d}", 11 if self.score > self.high_score else 7)
+        pyxel.text(5, 16, f"HIGH: {self.high_score:06d}", 7 if self.score < self.high_score else 11)
         pyxel.text(5, 27, f"WAVE: {self.wave}", 9)
         pyxel.text(5, 38, f"COMBO: x{self.combo}", 11 if self.combo > 0 else 7)
         pyxel.text(5, 110, "ARROW/WASD: MOVE  SPACE/Z: SHOOT  R:RETRY", 6)
