@@ -1,166 +1,224 @@
-﻿# gravity_rpg_fixed.py
+﻿# dragon_sword1_pyxel_s_vram.py
+# Sパネルも仮想VRAMで管理（配列不要）
+
 import pyxel
 
-# 10x10ステージ（固定画面用）
-LEVEL = [
-    "##########",
-    "#P.......#",
-    "#.###S...#",
-    "#.S...B..#",
-    "#.###.####",
-    "#.S......#",
-    "#.###S####",
-    "#........#",
-    "#........#",
+TILE = 16
+W, H = 10, 10
+MAX_STAGES = 3
+
+LEVELS = [
+    "##########"
+    "#P.......#"
+    "#.###S...#"
+    "#.S...B..#"
+    "#.###H####"
+    "#.S......#"
+    "#.###H####"
+    "#........#"
+    "#........#"
+    "#####G####",
+
+    "##########"
+    "#P..S....#"
+    "#.###....#"
+    "#..B.S...#"
+    "#.###.####"
+    "#....S...#"
+    "#.###H####"
+    "#........#"
+    "#....,...#"
+    "#####G####",
+
+    "##########"
+    "#P.......#"
+    "#.###S####"
+    "#..B.....#"
+    "#.###H####"
+    "#........#"
+    "#.###H####"
+    "#....S...#"
+    "#........#"
     "#####G####"
 ]
 
-class GravityRpgFixed:
+LEVEL_THRESHOLD = [0, 20, 50, 90, 140, 200, 270, 350, 440, 540]
+
+class Game:
     def __init__(self):
-        pyxel.init(160, 160, title="Dragon Sword 1 Remake")
-        self.tile_size = 16
-        self.map_w = len(LEVEL[0])
-        self.map_h = len(LEVEL)
-        self.player_x = self.player_y = 0
-        self.gravity_panel = None
-        self.panels = []
-        self.goal = (0, 0)
-        self.cleared = False
-        self.mode = "puzzle"
-        # RPGステータス
-        self.player_hp = 20
-        self.player_atk = 5
-        self.enemy = None
-        self.battle_msg = ""
-        
-        # マップ解析
-        for y in range(self.map_h):
-            for x in range(self.map_w):
-                c = LEVEL[y][x]
-                if c == "P":
-                    self.player_x, self.player_y = x, y
-                elif c == "B":
-                    self.gravity_panel = [x, y]
-                elif c == "S":
-                    self.panels.append([x, y])
-                elif c == "G":
-                    self.goal = (x, y)
-        
+        pyxel.init(W * TILE, H * TILE + 32, title="Dragon Sword 1 - S VRAM", fps=30)
+        self.reset()
         pyxel.run(self.update, self.draw)
 
+    def reset(self):
+        self.stage = 0
+        self.mode = 0
+        self.hp = 20
+        self.atk = 5
+        self.exp = 0
+        self.level = 1
+        self.parse_map()
+#        self.fall_counter = 0  # 落下カウンタ追加
+#        self.fall_delay = 1  # 1フレーム待機でスロー
+
+    def parse_map(self):
+        lvl = LEVELS[self.stage]
+        self.vram = [list(lvl[y*W:y*W+W]) for y in range(H)]
+        self.px = self.py = 0
+        self.gx = self.gy = -1
+        self.goal_x = self.goal_y = 0
+        for y in range(H):
+            for x in range(W):
+                c = self.vram[y][x]
+                if c == 'P':
+                    self.px, self.py = x, y
+                    self.vram[y][x] = '.'
+                elif c == 'B':
+                    self.gx, self.gy = x, y
+                    self.vram[y][x] = '.'
+                elif c == 'G':
+                    self.goal_x, self.goal_y = x, y
+
     def can_move(self, x, y):
-        if not (0 <= x < self.map_w and 0 <= y < self.map_h):
-            return False
-        if LEVEL[y][x] == "#":
-            return False
-        if self.gravity_panel and self.gravity_panel == [x, y]:
-            return False
-        for p in self.panels:
-            if p == [x, y]:
-                return False
+        if not (0 <= x < W and 0 <= y < H): return False
+        c = self.vram[y][x]
+        if c in '#HS': return False  # #壁, H残存, Sパネルは通れない
+        if self.gx == x and self.gy == y: return False
         return True
 
-    def update(self):
-        if self.cleared:
-            return
-        
-        if self.mode == "battle":
-            self.update_battle()
-            return
-        
-        # 重力パネル落下
-        if self.gravity_panel:
-            gx, gy = self.gravity_panel
-            if gy + 1 < self.map_h and self.can_move(gx, gy + 1):
-                self.gravity_panel[1] += 1
-                if self.gravity_panel == list(self.goal):
-                    self.cleared = True
-        
-        # プレイヤー入力
-        dx, dy = 0, 0
-        if pyxel.btnp(pyxel.KEY_LEFT):  dx = -1
-        if pyxel.btnp(pyxel.KEY_RIGHT): dx = 1
-        if pyxel.btnp(pyxel.KEY_UP):    dy = -1
-        if pyxel.btnp(pyxel.KEY_DOWN):  dy = 1
-        
-        if dx or dy:
-            nx, ny = self.player_x + dx, self.player_y + dy
-            # エンカウント（5%）
-            if pyxel.rndi(0, 100) < 5:
-                self.mode = "battle"
-                self.enemy = [10, 3, "Slime"]
-                self.battle_msg = f"{self.enemy[2]} appeared!"
-                return
-            
-            # 重力パネル押す
-            if self.gravity_panel and self.gravity_panel == [nx, ny]:
-                gnx, gny = nx + dx, ny + dy
-                if self.can_move(gnx, gny):
-                    self.gravity_panel[0], self.gravity_panel[1] = gnx, gny
-                    self.player_x, self.player_y = nx, ny
-                return
-            
-            # 通常パネル押す
-            for i, p in enumerate(self.panels):
-                if p == [nx, ny]:
-                    pnx, pny = nx + dx, ny + dy
-                    if self.can_move(pnx, pny):
-                        self.panels[i] = [pnx, pny]
-                        self.player_x, self.player_y = nx, ny
-                    return
-            
-            # 通常移動
-            if self.can_move(nx, ny):
-                self.player_x, self.player_y = nx, ny
+    def try_move(self, dx, dy):
+        nx, ny = self.px + dx, self.py + dy
+        moved = False
 
-    def update_battle(self):
-        if pyxel.btnp(pyxel.KEY_A):  # 攻撃
-            self.enemy[0] -= self.player_atk
-            self.battle_msg = f"Hit {self.enemy[2]} for {self.player_atk} damage!"
-            if self.enemy[0] <= 0:
-                self.battle_msg = f"{self.enemy[2]} defeated!"
-                self.mode = "puzzle"
-                self.enemy = None
-                return
-            self.player_hp -= self.enemy[1]
-            self.battle_msg += f"\n{self.enemy[2]} hits you for {self.enemy[1]} damage!"
-            if self.player_hp <= 0:
-                self.battle_msg = "Game Over..."
-                self.cleared = True
+        # 重力パネル押す
+        if self.gx == nx and self.gy == ny:
+            gnx, gny = nx + dx, ny + dy
+            if self.can_move(gnx, gny):
+                self.gx, self.gy = gnx, gny
+                self.px, self.py = nx, ny
+                moved = True
+
+        # Sパネル押す
+        elif self.vram[ny][nx] == 'S':
+            pnx, pny = nx + dx, ny + dy
+            if self.can_move(pnx, pny):
+                self.vram[ny][nx] = '.'
+                self.vram[pny][pnx] = 'S'
+                self.px, self.py = nx, ny
+                moved = True
+
+        # 通常移動
+        elif self.can_move(nx, ny):
+            self.px, self.py = nx, ny
+            moved = True
+
+        if moved:
+            pyxel.play(0, 0)
+            return True
+        return False
+
+    def gravity_fall(self):
+        if self.gx == -1: return
+#        if self.fall_counter > 0:
+#            self.fall_counter -= 1
+#            return  # 待機中
+
+#        self.fall_counter = self.fall_delay  # 次落下まで待機
+        if self.gy + 1 < H:
+            nx, ny = self.gx, self.gy + 1
+            c = self.vram[ny][nx]
+            if c != '#':
+                if c == 'H':
+                    self.vram[ny][nx] = '.'  # H消す
+                if not self.can_move(nx, ny): return
+                self.gy += 1
+                pyxel.play(0, 1)
+                if self.gx == self.goal_x and self.gy == self.goal_y:
+                    pyxel.play(0, 2)
+                    self.stage = (self.stage + 1) % MAX_STAGES
+                    self.hp = 20 + 5 * self.level
+                    self.parse_map()
+                    return
+
+    def update(self):
+        if self.mode == 0:
+            self.gravity_fall()
+
+            moved = False
+            if pyxel.btnp(pyxel.KEY_LEFT): moved = self.try_move(-1, 0)
+            if pyxel.btnp(pyxel.KEY_RIGHT): moved = self.try_move(1, 0)
+            if pyxel.btnp(pyxel.KEY_UP): moved = self.try_move(0, -1)
+            if pyxel.btnp(pyxel.KEY_DOWN): moved = self.try_move(0, 1)
+            if pyxel.btnp(pyxel.KEY_G):  # ギブアップ
+                self.hp = 20 + 5 * self.level
+                self.parse_map()
+                moved = True
+
+            if moved and pyxel.rndi(0, 99) < 5:
+                self.mode = 1
+                self.enemy_hp = 10 + self.level * 5
+                self.enemy_atk = 3 + self.level * 2
+
+        else:
+            if pyxel.btnp(pyxel.KEY_A):  # 攻撃
+                self.enemy_hp -= self.atk
+                if self.enemy_hp <= 0:
+                    self.exp += 10
+                    if self.level < len(LEVEL_THRESHOLD) and self.exp >= LEVEL_THRESHOLD[self.level]:
+                        self.level += 1
+                        self.hp = 20 + 5 * self.level
+                        self.atk += 2
+                    self.mode = 0
+                else:
+                    self.hp -= self.enemy_atk
+                    if self.hp <= 0:
+                        self.hp = 20 + 5 * self.level
+                        self.mode = 0
+                        self.parse_map()
+
+            if pyxel.btnp(pyxel.KEY_B):  # 逃げる
+                if pyxel.rndi(0, 255) < 192:  # 75%成功
+                    self.mode = 0
+                else:
+                    self.hp -= self.enemy_atk
+                    if self.hp <= 0:
+                        self.hp = 20 + 5 * self.level
+                        self.mode = 0
+                        self.parse_map()
 
     def draw(self):
         pyxel.cls(0)
-        
-        if self.mode == "battle":
-            pyxel.rect(10, 10, 140, 100, 1)
-            pyxel.text(20, 20, self.battle_msg, 7)
-            pyxel.text(20, 90, f"HP: {self.player_hp}", 7)
-            pyxel.text(20, 100, "A: Attack", 7)
-            pyxel.rect(80, 40, 16, 16, 11)  # 敵スプライト
-            return
-        
-        # パズル画面（固定）
-        for y in range(self.map_h):
-            for x in range(self.map_w):
-                tx = x * self.tile_size
-                ty = y * self.tile_size
-                if LEVEL[y][x] == "#":
-                    pyxel.rect(tx, ty, self.tile_size, self.tile_size, 1)
-                else:
-                    pyxel.rect(tx, ty, self.tile_size, self.tile_size, 7)
-                if LEVEL[y][x] == "G":
-                    pyxel.rect(tx + 4, ty + 4, 8, 8, 10)
-        
-        for p in self.panels:
-            pyxel.rect(p[0]*self.tile_size + 2, p[1]*self.tile_size + 2, 12, 12, 9)
-        
-        if self.gravity_panel:
-            gx, gy = self.gravity_panel
-            pyxel.rect(gx*self.tile_size + 2, gy*self.tile_size + 2, 12, 12, 11)
-        
-        pyxel.rect(self.player_x*self.tile_size + 2, self.player_y*self.tile_size + 2, 12, 12, 8)
-        
-        if self.cleared:
-            pyxel.text(60, 80, "STAGE CLEAR!!", 10)
 
-GravityRpgFixed()
+        for y in range(H):
+            for x in range(W):
+                tx, ty = x * TILE, y * TILE
+                c = self.vram[y][x]
+                col = 1  # 床
+                if c == '#': col = 0
+                if c == 'G': col = 10
+                if c == 'H': col = 13
+                if c == 'S': col = 11  # Sパネル
+                pyxel.rect(tx, ty, TILE, TILE, col)
+
+        # プレイヤー
+        pyxel.rect(self.px * TILE + 2, self.py * TILE + 2, 12, 12, 8)
+
+        # 重力パネル
+        if self.gx != -1:
+            gx, gy = self.gx * TILE, self.gy * TILE
+            pyxel.rect(gx + 2, gy + 2, 12, 12, 9)
+            pyxel.tri(gx + 4, gy + 10, gx + 12, gy + 10, gx + 8, gy + 14, 8)
+
+        # ステータス
+        pyxel.text(2, H * TILE + 2, f"STAGE:{self.stage+1} LV:{self.level} HP:{self.hp} EXP:{self.exp}", 7)
+
+        pyxel.text(2, H * TILE + 16, "GIVE UP - 'G'", 7)
+
+        if self.mode == 1:
+            pyxel.rect(30, 40, 100, 64, 0)
+            pyxel.rectb(30, 40, 100, 64, 7)
+            pyxel.circ(80, 60, 20, 13)
+            pyxel.text(40, 90, "Slime appeared!", 7)
+            pyxel.text(40, 100, "A:Attack B:Escape", 7)
+
+Game()
