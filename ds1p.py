@@ -56,7 +56,7 @@ class Game:
 		pyxel.mouse(False)
 		pyxel.load("ds1p.pyxres")
 
-		pyxel.sound(0).set("c3e3", "s", "64", "n", 10)	  # 射撃: ピコピコ
+		pyxel.sounds[0].set("c3e3", "s", "64", "n", 10)	  # 射撃: ピコピコ
 		self.reset()
 		pyxel.run(self.update, self.draw)
 
@@ -262,10 +262,10 @@ class Game:
 		if self.mode == 1:
 #			pyxel.rect(30, 40, 100, 64, 0)
 #			pyxel.rectb(30, 40, 100, 64, 7)
-			pyxel.circ(80+120, 60+100, 20, 13)
+			pyxel.circ(80+120-4, 60+100, 20, 13)
 			pyxel.blt(60+120, 40+100, 0, 7 * 32, 0, 32, 32, 0)
-			self.put_strings(40+60, 90+100, "SLIME APPEARED")
-			self.put_strings(40+40, 120+100, "Z:ATTACK X:ESCAPE")
+			self.put_strings(20+60, 90+100, "SLIME APPEARED")
+			self.put_strings(20+40, 120+100, "Z:ATTACK X:ESCAPE")
 			if self.failed == True:
 				if self.count > 0:
 					self.put_strings(60+60, 150+100, "FAILED")
