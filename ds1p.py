@@ -168,11 +168,19 @@ class Game:
 			if self.gravity_fall():
 				moved= True
 
-			if pyxel.btnp(pyxel.KEY_LEFT) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT): moved = self.try_move(-1, 0)
-			elif pyxel.btnp(pyxel.KEY_RIGHT) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT): moved = self.try_move(1, 0)
-			elif pyxel.btnp(pyxel.KEY_UP) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_UP): moved = self.try_move(0, -1)
-			elif pyxel.btnp(pyxel.KEY_DOWN) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN): moved = self.try_move(0, 1)
-			elif pyxel.btnp(pyxel.KEY_G) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):  # ギブアップ
+			left = pyxel.btnp(pyxel.KEY_LEFT) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT)
+			right = pyxel.btnp(pyxel.KEY_RIGHT) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT)
+			up = pyxel.btnp(pyxel.KEY_UP) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_UP)
+			down = pyxel.btnp(pyxel.KEY_DOWN) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN)
+
+			count = int(left) + int(right) + int(up) + int(down)
+
+			if(count == 1):
+				if left: moved = self.try_move(-1, 0)
+				elif right: moved = self.try_move(1, 0)
+				elif up: moved = self.try_move(0, -1)
+				elif down: moved = self.try_move(0, 1)
+			if pyxel.btnp(pyxel.KEY_G) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):  # ギブアップ
 				self.hp = 20 + 5 * self.level
 				self.parse_map()
 				moved = True
