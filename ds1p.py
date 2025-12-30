@@ -80,6 +80,8 @@ class Game:
 		self.parse_map()
 #		self.fall_counter = 0  # 落下カウンタ追加
 #		self.fall_delay = 1  # 1フレーム待機でスロー
+		self.count = 0
+		self.failed = False
 
 	def parse_map(self):
 		lvl = LEVELS[self.stage]
@@ -191,7 +193,8 @@ class Game:
 				self.enemy_atk = 3 + self.level * 2
 
 		else:
-			if pyxel.btnp(pyxel.KEY_A) or pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A):  # 攻撃
+			if pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A):  # 攻撃
+				self.failed = False
 				self.enemy_hp -= self.atk
 				if self.enemy_hp <= 0:
 					self.exp += 10
@@ -203,50 +206,58 @@ class Game:
 				else:
 					self.hp -= self.enemy_atk
 					if self.hp <= 0:
+						self.count = 60
 						self.hp = 20 + 5 * self.level
-						self.mode = 0
+						self.mode = 2
 						self.parse_map()
 
-			if pyxel.btnp(pyxel.KEY_B) or pyxel.btnp(pyxel.KEY_X) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):  # 逃げる
+			if pyxel.btnp(pyxel.KEY_X) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):  # 逃げる
 				if pyxel.rndi(0, 255) < 192:  # 75%成功
+					self.failed = False
 					self.mode = 0
 				else:
+					self.failed = True
 					self.hp -= self.enemy_atk
+					self.count = 60
 					if self.hp <= 0:
 						self.hp = 20 + 5 * self.level
-						self.mode = 0
+						self.mode = 2
 						self.parse_map()
 
 	def draw(self):
 		pyxel.cls(0)
+		if(self.count > 0):
+			self.count -= 1
 
-		for y in range(H):
-			for x in range(W):
-				tx, ty = x * TILE, y * TILE
-				c = self.vram[y][x]
-				col = 1  # 床
-				if c == '#': col = 0
-				if c == 'G': col = 5
-				if c == 'H': col = 6
-				if c == 'S': col = 3  # Sパネル
-#				pyxel.rect(tx, ty, TILE, TILE, col)
-				pyxel.blt(tx, ty, 0, col * 32, 0, 32, 32, 0)
+		if self.mode == 0:
+			for y in range(H):
+				for x in range(W):
+					tx, ty = x * TILE, y * TILE
+					c = self.vram[y][x]
+					col = 1  # 床
+					if c == '#': col = 0
+					if c == 'G': col = 5
+					if c == 'H': col = 6
+					if c == 'S': col = 3  # Sパネル
+#					pyxel.rect(tx, ty, TILE, TILE, col)
+					pyxel.blt(tx, ty, 0, col * 32, 0, 32, 32, 0)
 
-		# プレイヤー
-#		pyxel.rect(self.px * TILE + 2, self.py * TILE + 2, 12, 12, 8)
-		pyxel.blt(self.px * TILE, self.py * TILE, 0, 2 * 32, 0, 32, 32, 0)
+			# プレイヤー
+#			pyxel.rect(self.px * TILE + 2, self.py * TILE + 2, 12, 12, 8)
+			pyxel.blt(self.px * TILE, self.py * TILE, 0, 2 * 32, 0, 32, 32, 0)
 
-		# 重力パネル
-		if self.gx != -1:
-			gx, gy = self.gx * TILE, self.gy * TILE
-			pyxel.blt(gx, gy, 0, 4 * 32, 0, 32, 32, 0)
-#			pyxel.rect(gx + 2, gy + 2, 12, 12, 9)
-#			pyxel.tri(gx + 4, gy + 10, gx + 12, gy + 10, gx + 8, gy + 14, 8)
+			# 重力パネル
+			if self.gx != -1:
+				gx, gy = self.gx * TILE, self.gy * TILE
+				pyxel.blt(gx, gy, 0, 4 * 32, 0, 32, 32, 0)
+#				pyxel.rect(gx + 2, gy + 2, 12, 12, 9)
+#				pyxel.tri(gx + 4, gy + 10, gx + 12, gy + 10, gx + 8, gy + 14, 8)
 
 		# ステータス
 		self.put_strings(2, H * TILE + 2, f"STAGE:{self.stage+1} LV:{self.level} HP:{self.hp}")
-
 		self.put_strings(2, H * TILE + 16, f"EXP:{self.exp} GIVE UP G")
+
+#		self.put_strings(50+60, 90+100, f"{self.count}")
 
 		if self.mode == 1:
 #			pyxel.rect(30, 40, 100, 64, 0)
@@ -254,6 +265,15 @@ class Game:
 			pyxel.circ(80+120, 60+100, 20, 13)
 			pyxel.blt(60+120, 40+100, 0, 7 * 32, 0, 32, 32, 0)
 			self.put_strings(40+60, 90+100, "SLIME APPEARED")
-			self.put_strings(40+40, 120+100, "A:ATTACK B:ESCAPE")
+			self.put_strings(40+40, 120+100, "Z:ATTACK X:ESCAPE")
+			if self.failed == True:
+				if self.count > 0:
+					self.put_strings(60+60, 150+100, "FAILED")
+
+		if self.mode == 2:
+			if self.count == 0:
+				self.mode = 0
+			else:
+				self.put_strings(50+60, 90+100, "YOU DEAD")
 
 Game()
