@@ -168,11 +168,11 @@ class Game:
 			if self.gravity_fall():
 				moved= True
 
-			if pyxel.btnp(pyxel.KEY_LEFT): moved = self.try_move(-1, 0)
-			if pyxel.btnp(pyxel.KEY_RIGHT): moved = self.try_move(1, 0)
-			if pyxel.btnp(pyxel.KEY_UP): moved = self.try_move(0, -1)
-			if pyxel.btnp(pyxel.KEY_DOWN): moved = self.try_move(0, 1)
-			if pyxel.btnp(pyxel.KEY_G):  # ギブアップ
+			if pyxel.btnp(pyxel.KEY_LEFT) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT): moved = self.try_move(-1, 0)
+			if pyxel.btnp(pyxel.KEY_RIGHT) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT): moved = self.try_move(1, 0)
+			if pyxel.btnp(pyxel.KEY_UP) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_UP): moved = self.try_move(0, -1)
+			if pyxel.btnp(pyxel.KEY_DOWN) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN): moved = self.try_move(0, 1)
+			if pyxel.btnp(pyxel.KEY_G) or (pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A) and pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B)):  # ギブアップ
 				self.hp = 20 + 5 * self.level
 				self.parse_map()
 				moved = True
@@ -183,7 +183,7 @@ class Game:
 				self.enemy_atk = 3 + self.level * 2
 
 		else:
-			if pyxel.btnp(pyxel.KEY_A):  # 攻撃
+			if pyxel.btnp(pyxel.KEY_A) or pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A):  # 攻撃
 				self.enemy_hp -= self.atk
 				if self.enemy_hp <= 0:
 					self.exp += 10
@@ -199,7 +199,7 @@ class Game:
 						self.mode = 0
 						self.parse_map()
 
-			if pyxel.btnp(pyxel.KEY_B):  # 逃げる
+			if pyxel.btnp(pyxel.KEY_B) or pyxel.btnp(pyxel.KEY_X) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):  # 逃げる
 				if pyxel.rndi(0, 255) < 192:  # 75%成功
 					self.mode = 0
 				else:
