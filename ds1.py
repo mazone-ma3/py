@@ -4,42 +4,48 @@
 import pyxel
 
 TILE = 16
-W, H = 10, 10
+W, H = 12, 12
 MAX_STAGES = 3
 
 LEVELS = [
-    "##########"
-    "#P.......#"
-    "#.###S...#"
-    "#.S...B..#"
-    "#.###H####"
-    "#.S......#"
-    "#.###H####"
-    "#........#"
-    "#........#"
-    "#####G####",
+	"############"
+	"#....PB....#"
+	"##SSS.SHS.##"
+	"##..S.S.#.##"
+	"##....S.#.##"
+	"##....S.#.##"
+	"##.SS.S.#.##"
+	"##..S.S.#.##"
+	"##..S.S.#..#"
+	"##SSS.SHS.##"
+	"#.........##"
+	"######G#####",
 
-    "##########"
-    "#P..S....#"
-    "#.###....#"
-    "#..B.S...#"
-    "#.###.####"
-    "#....S...#"
-    "#.###H####"
-    "#........#"
-    "#....,...#"
-    "#####G####",
+	"############"
+	"#.#..PB.#..#"
+	"#####.#.#..#"
+	"#.S.S...#..#"
+	"#.S.SSSH...#"
+	"#..........#"
+	"#..##...#.S#"
+	"#.S.#.S.#.H#"
+	"#.SS#...#.##"
+	"#S..#.##...#"
+	"#..S......##"
+	"######G#####",
 
-    "##########"
-    "#P.......#"
-    "#.###S####"
-    "#..B.....#"
-    "#.###H####"
-    "#........#"
-    "#.###H####"
-    "#....S...#"
-    "#........#"
-    "#####G####"
+	"############"
+	"###..PB..#.#"
+	"#..#S#S..#.#"
+	"#.......#.S#"
+	"#..#..##...#"
+	"#...##.....#"
+	"##....S.S..#"
+	"#.S###.S.S##"
+	"#..........#"
+	"###H###SSSS#"
+	"#..........#"
+	"######G#####",
 ]
 
 LEVEL_THRESHOLD = [0, 20, 50, 90, 140, 200, 270, 350, 440, 540]
@@ -47,6 +53,7 @@ LEVEL_THRESHOLD = [0, 20, 50, 90, 140, 200, 270, 350, 440, 540]
 class Game:
     def __init__(self):
         pyxel.init(W * TILE, H * TILE + 32, title="Dragon Sword 1 - S VRAM", fps=30)
+        pyxel.sound(0).set("c3e3", "s", "64", "n", 10)	  # 射撃: ピコピコ
         self.reset()
         pyxel.run(self.update, self.draw)
 
@@ -95,8 +102,8 @@ class Game:
             gnx, gny = nx + dx, ny + dy
             if self.can_move(gnx, gny):
                 self.gx, self.gy = gnx, gny
-                self.px, self.py = nx, ny
-                moved = True
+#                self.px, self.py = nx, ny
+#                moved = True
 
         # Sパネル押す
         elif self.vram[ny][nx] == 'S':
@@ -104,13 +111,14 @@ class Game:
             if self.can_move(pnx, pny):
                 self.vram[ny][nx] = '.'
                 self.vram[pny][pnx] = 'S'
-                self.px, self.py = nx, ny
-                moved = True
+#                self.px, self.py = nx, ny
+#                moved = False
 
         # 通常移動
         elif self.can_move(nx, ny):
-            self.px, self.py = nx, ny
-            moved = True
+            if self.vram[ny][nx] != 'G':
+                self.px, self.py = nx, ny
+                moved = True
 
         if moved:
             pyxel.play(0, 0)
@@ -130,7 +138,7 @@ class Game:
             if c != '#':
                 if c == 'H':
                     self.vram[ny][nx] = '.'  # H消す
-                if not self.can_move(nx, ny): return
+                if not self.can_move(nx, ny): return False
                 self.gy += 1
                 pyxel.play(0, 1)
                 if self.gx == self.goal_x and self.gy == self.goal_y:
@@ -138,13 +146,15 @@ class Game:
                     self.stage = (self.stage + 1) % MAX_STAGES
                     self.hp = 20 + 5 * self.level
                     self.parse_map()
-                    return
+                    return True
+        return False
 
     def update(self):
         if self.mode == 0:
-            self.gravity_fall()
-
             moved = False
+            if self.gravity_fall():
+                moved= True
+
             if pyxel.btnp(pyxel.KEY_LEFT): moved = self.try_move(-1, 0)
             if pyxel.btnp(pyxel.KEY_RIGHT): moved = self.try_move(1, 0)
             if pyxel.btnp(pyxel.KEY_UP): moved = self.try_move(0, -1)
@@ -154,7 +164,7 @@ class Game:
                 self.parse_map()
                 moved = True
 
-            if moved and pyxel.rndi(0, 99) < 5:
+            if moved and pyxel.rndi(0, 99) < 3:
                 self.mode = 1
                 self.enemy_hp = 10 + self.level * 5
                 self.enemy_atk = 3 + self.level * 2
