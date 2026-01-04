@@ -285,7 +285,6 @@ class Game:
 					self.hp -= self.enemy_atk
 					if self.hp <= 0:
 						self.count = 60
-						self.hp = 20 + 5 * self.level
 						self.mode = 2
 						self.parse_map()
 
@@ -351,6 +350,7 @@ class Game:
 		if self.mode == 2:
 			if self.count == 0:
 				self.mode = 0
+				self.hp = 20 + 5 * self.level
 			else:
 				self.put_strings(50+60, 90+100, "YOU DEAD")
 
