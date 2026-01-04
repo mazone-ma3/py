@@ -268,7 +268,7 @@ class Game:
 			if moved and pyxel.rndi(0, 99) < 3:
 				self.mode = 1
 				self.enemy_hp = 10 + self.level * 5
-				self.enemy_atk = 3 + self.level * 2
+				self.enemy_atk = 3 + self.level * 3 / 2
 
 		else:
 			if pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A):  # 攻撃
@@ -290,7 +290,7 @@ class Game:
 						self.parse_map()
 
 			if pyxel.btnp(pyxel.KEY_X) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):  # 逃げる
-				if pyxel.rndi(0, 255) < 192:  # 75%成功
+				if pyxel.rndi(0, 255) < 224:  # 87%成功
 					self.failed = False
 					self.mode = 0
 				else:
