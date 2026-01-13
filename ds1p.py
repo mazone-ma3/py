@@ -3,9 +3,22 @@
 
 import pyxel
 
+MODE_PUZZLE = 0
+MODE_BATTLE = 1
+MODE_TITLE = 2
+MODE_RETURN = 3
+MODE_OVER = 4
+MODE_GIVE = 5
+MODE_GIVE2 = 6
+MODE_CLEAR = 7
+MODE_CLEAR2 = 8
+MODE_RETURN = 9
+MODE_ESCAPE = 10
+MODE_WIN = 11
+
 TILE = 32
 W, H = 12, 12
-MAX_STAGES = 9
+MAX_STAGES = 12
 
 LEVELS = [
 	"############"	# 1
@@ -35,16 +48,16 @@ LEVELS = [
 	"######G#####",
 
 	"############"	# 3
-	"#SS.#PB...S#"
-	"#S..#.##..S#"
-	"#SS.#.#.S.S#"
-	"#.S.#.#..#S#"
-	"#SS.###...S#"
+	"###..PB....#"
+	"##.........#"
+	"#.S.#.#.####"
+	"##S..##.#.##"
 	"#..........#"
-	"#S..SSS.S.S#"
-	"#S#.H.#.####"
-	"##S.HSS..S.#"
-	"##..H.S..#.#"
+	"###...S.#.##"
+	"##.#.S.#####"
+	"##.S.###.S.#"
+	"##S..#.#.S.#"
+	"#..........#"
 	"######G#####",
 
 	"############"	# 4
@@ -113,6 +126,45 @@ LEVELS = [
 	"######G#####",
 
 	"############"	# 9
+	"#....PB....#"
+	"#.S.S.H.S.S#"
+	"#.S.S.S.S.S#"
+	"#..S.S.#.S.#"
+	"#..S.#.S.S.#"
+	"#...S.S.S..#"
+	"#...S.#.S..#"
+	"#....S.S...#"
+	"#....S.S...#"
+	"#.....H....#"
+	"######G#####",
+
+	"############"	# 10
+	"#....PBH...#"
+	"#...SSHSS..#"
+	"#..SS.H.SS.#"
+	"#.S.S.H.S.S#"
+	"#.SSSHSHSSS#"
+	"#.SS.S.S.SS#"
+	"#..SS...SS.#"
+	"#...SS.SS..#"
+	"#....SSS...#"
+	"#..........#"
+	"######G#####",
+
+	"############"	# 11
+	"#....PB....#"
+	"#.....H....#"
+	"#...#.H.#..#"
+	"#...#.S.#.H#"
+	"#...S.S.#.H#"
+	"#.H.#.S.#.H#"
+	"#.HHSH#SSSH#"
+	"#.HH......H#"
+	"#.HHS.SSSHH#"
+	"#..##H...H.#"
+	"######G#####",
+
+	"############"	# 12
 	"#.S..PB##..#"
 	"#.S...H.H..#"
 	"#.S...SSS..#"
@@ -150,7 +202,7 @@ class Game:
 
 	def reset(self):
 		self.stage = 0
-		self.mode = 0
+		self.mode = MODE_TITLE
 		self.hp = 20
 		self.atk = 5
 		self.exp = 0
@@ -160,6 +212,8 @@ class Game:
 #		self.fall_delay = 1  # 1フレーム待機でスロー
 		self.count = 0
 		self.failed = False
+		self.attacked = False
+		self.levelup = False
 
 	def parse_map(self):
 		lvl = LEVELS[self.stage]
@@ -236,23 +290,41 @@ class Game:
 				pyxel.play(0, 1)
 				if self.gx == self.goal_x and self.gy == self.goal_y:
 					pyxel.play(0, 2)
-					self.stage = (self.stage + 1) % MAX_STAGES
-					self.hp = 20 + 5 * self.level
-					self.parse_map()
+					self.mode = MODE_CLEAR
+					self.count = 30
 					return True
 		return False
 
 	def update(self):
-		if self.mode == 0:
+		if self.mode == MODE_TITLE:
+			if pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A): 
+				self.mode = MODE_PUZZLE
+
+		elif self.mode == MODE_GIVE2:
+			self.hp = 20 + 5 * self.level
+			self.parse_map()
+			moved = True
+			self.mode = MODE_PUZZLE
+
+		elif self.mode == MODE_CLEAR2:
+			self.stage = (self.stage + 1) % MAX_STAGES
+			self.hp = 20 + 5 * self.level
+			self.parse_map()
+			self.mode = MODE_PUZZLE
+
+		elif self.mode == MODE_PUZZLE:
+			self.attacked = False
 			moved = False
 			if self.gravity_fall():
-				moved= True
+				moved= False #True
 
-			left = pyxel.btnp(pyxel.KEY_LEFT) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT)
-			right = pyxel.btnp(pyxel.KEY_RIGHT) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT)
-			up = pyxel.btnp(pyxel.KEY_UP) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_UP)
-			down = pyxel.btnp(pyxel.KEY_DOWN) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN)
-
+			if(self.count == 0):
+				left = pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT)
+				right = pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT)
+				up = pyxel.btn(pyxel.KEY_UP) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_UP)
+				down = pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN)
+			else:
+				left = right = up = down = 0
 			count = int(left) + int(right) + int(up) + int(down)
 
 			if(count == 1):
@@ -260,45 +332,56 @@ class Game:
 				elif right: moved = self.try_move(1, 0)
 				elif up: moved = self.try_move(0, -1)
 				elif down: moved = self.try_move(0, 1)
-			if pyxel.btnp(pyxel.KEY_G) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):  # ギブアップ
-				self.hp = 20 + 5 * self.level
-				self.parse_map()
-				moved = True
+				self.count = 5
+			if pyxel.btnp(pyxel.KEY_G) or pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):  # ギブアップ
+				self.mode = MODE_GIVE
+				self.count = 30
 
 			if moved and pyxel.rndi(0, 99) < 3:
-				self.mode = 1
+				self.mode = MODE_BATTLE
 				self.enemy_hp = 10 + self.level * 5
 				self.enemy_atk = 3 + int(self.level * 3 / 2)
 
-		else:
+		elif self.mode == MODE_BATTLE:
 			if pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A):  # 攻撃
 				self.failed = False
 				self.enemy_hp -= self.atk
 				if self.enemy_hp <= 0:
+					self.attacked = False
 					self.exp += 10
+					self.count = 30
+					self.mode = MODE_WIN
 					if self.level < len(LEVEL_THRESHOLD) and self.exp >= LEVEL_THRESHOLD[self.level]:
 						self.level += 1
 						self.hp = 20 + 5 * self.level
 						self.atk += 2
-					self.mode = 0
+						self.levelup = True
+					else:
+						self.levelup = False
+
 				else:
 					self.hp -= self.enemy_atk
 					if self.hp <= 0:
 						self.count = 60
-						self.mode = 2
+						self.mode = MODE_OVER
 						self.parse_map()
+					else:
+						self.attacked = True
+						self.count = 60
 
 			if pyxel.btnp(pyxel.KEY_X) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):  # 逃げる
 				if pyxel.rndi(0, 255) < 224:  # 87%成功
 					self.failed = False
-					self.mode = 0
+					self.count = 30
+					self.mode = MODE_ESCAPE
 				else:
 					self.failed = True
 					self.hp -= self.enemy_atk
 					self.count = 60
 					if self.hp <= 0:
 						self.hp = 20 + 5 * self.level
-						self.mode = 2
+						self.count = 60
+						self.mode = MODE_OVER
 						self.parse_map()
 
 	def draw(self):
@@ -306,7 +389,7 @@ class Game:
 		if(self.count > 0):
 			self.count -= 1
 
-		if self.mode == 0:
+		if self.mode == MODE_PUZZLE or self.mode == MODE_GIVE or self.mode == MODE_CLEAR:
 			for y in range(H):
 				for x in range(W):
 					tx, ty = x * TILE, y * TILE
@@ -331,12 +414,39 @@ class Game:
 #				pyxel.tri(gx + 4, gy + 10, gx + 12, gy + 10, gx + 8, gy + 14, 8)
 
 		# ステータス
-		self.put_strings(2, H * TILE + 2, f"STAGE:{self.stage+1} LV:{self.level} HP:{self.hp}")
-		self.put_strings(2, H * TILE + 16, f"EXP:{self.exp} GIVE UP G")
+		if self.mode != MODE_TITLE and self.mode != MODE_GIVE :
+			self.put_strings(2, H * TILE + 2, f"STAGE:{self.stage+1} LV:{self.level} HP:{self.hp}")
+			self.put_strings(2, H * TILE + 16, f"EXP:{self.exp} GIVE UP G")
 
-#		self.put_strings(50+60, 90+100, f"{self.count}")
+#			self.put_strings(50+60, 90+100, f"{self.count}")
 
-		if self.mode == 1:
+		if self.mode == MODE_TITLE:
+			self.put_strings(3*16, 8*16, "DRAGON SWORD PART 1")
+			self.put_strings(3*16, 20*16, "HIT Z KEY TO START")
+
+		if self.mode == MODE_GIVE:
+			self.put_strings(0, 24*16, "GIVE UP")
+			if self.count == 0:
+				self.mode = MODE_GIVE2
+
+		if self.mode == MODE_CLEAR:
+			self.put_strings(6*16, 10*16, "STAGE CLEAR")
+			if self.count == 0:
+				self.mode = MODE_CLEAR2
+
+		if self.mode == MODE_ESCAPE:
+			self.put_strings(60+60, 150+100, "ESCAPED")
+			if self.count == 0:
+				self.mode = MODE_PUZZLE
+
+		if self.mode == MODE_WIN:
+			self.put_strings(5*16, 10*16, "ENEMY DEFEATED")
+			if self.levelup == True:
+				self.put_strings(5*16, 16*16, "LEVEL UP")
+			if self.count == 0:
+				self.mode = MODE_PUZZLE
+
+		if self.mode == MODE_BATTLE or  self.mode == MODE_ESCAPE:
 #			pyxel.rect(30, 40, 100, 64, 0)
 #			pyxel.rectb(30, 40, 100, 64, 7)
 			pyxel.circ(80+120-4, 60+100, 20, 13)
@@ -346,10 +456,15 @@ class Game:
 			if self.failed == True:
 				if self.count > 0:
 					self.put_strings(60+60, 150+100, "FAILED")
+			elif self.attacked == True:
+				if self.count > 0:
+					self.put_strings(60+60, 150+100, "HIT")
+				else:
+					self.attacked = False
 
-		if self.mode == 2:
+		if self.mode == MODE_OVER:
 			if self.count == 0:
-				self.mode = 0
+				self.mode = MODE_PUZZLE
 				self.hp = 20 + 5 * self.level
 			else:
 				self.put_strings(50+60, 90+100, "YOU DEAD")
