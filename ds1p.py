@@ -15,6 +15,7 @@ MODE_CLEAR2 = 8
 MODE_RETURN = 9
 MODE_ESCAPE = 10
 MODE_WIN = 11
+MODE_END = 12
 
 TILE = 32
 W, H = 12, 12
@@ -307,10 +308,15 @@ class Game:
 			self.mode = MODE_PUZZLE
 
 		elif self.mode == MODE_CLEAR2:
-			self.stage = (self.stage + 1) % MAX_STAGES
-			self.hp = 20 + 5 * self.level
-			self.parse_map()
-			self.mode = MODE_PUZZLE
+			self.stage = (self.stage + 1)
+			if self.stage == MAX_STAGES:
+				self.stage = 0
+				self.count = 300
+				self.mode = MODE_END
+			else:
+				self.hp = 20 + 5 * self.level
+				self.parse_map()
+				self.mode = MODE_PUZZLE
 
 		elif self.mode == MODE_PUZZLE:
 			self.attacked = False
@@ -414,7 +420,7 @@ class Game:
 #				pyxel.tri(gx + 4, gy + 10, gx + 12, gy + 10, gx + 8, gy + 14, 8)
 
 		# ステータス
-		if self.mode != MODE_TITLE and self.mode != MODE_GIVE :
+		if self.mode != MODE_TITLE and self.mode != MODE_GIVE and self.mode != MODE_END:
 			self.put_strings(2, H * TILE + 2, f"STAGE:{self.stage+1} LV:{self.level} HP:{self.hp}")
 			self.put_strings(2, H * TILE + 16, f"EXP:{self.exp} GIVE UP G")
 
@@ -423,6 +429,13 @@ class Game:
 		if self.mode == MODE_TITLE:
 			self.put_strings(3*16, 8*16, "DRAGON SWORD PART 1")
 			self.put_strings(3*16, 20*16, "HIT Z KEY TO START")
+
+		if self.mode == MODE_END:
+			self.put_strings(8*16, 10*16, "ALL CLEAR")
+			self.put_strings(5*16, 12*16,"CONGRATULATIONS")
+			if self.count == 0:
+				self.reset()
+#				self.mode = MODE_TITLE
 
 		if self.mode == MODE_GIVE:
 			self.put_strings(0, 24*16, "GIVE UP")
