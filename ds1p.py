@@ -427,6 +427,8 @@ class Game:
 #			self.put_strings(50+60, 90+100, f"{self.count}")
 
 		if self.mode == MODE_TITLE:
+			self.put_strings(5*16, 15*16, "      i  k   ")
+			self.put_strings(5*16, 16*16, " 2026 bcdefgh")
 			self.put_strings(3*16, 8*16, "DRAGON SWORD PART 1")
 			self.put_strings(3*16, 20*16, "HIT Z KEY TO START")
 
