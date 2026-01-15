@@ -297,6 +297,7 @@ class Game:
 		return False
 
 	def update(self):
+		pyxel.rndi(0, 255)
 		if self.mode == MODE_TITLE:
 			if pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A): 
 				self.mode = MODE_PUZZLE
@@ -320,6 +321,7 @@ class Game:
 
 		elif self.mode == MODE_PUZZLE:
 			self.attacked = False
+			self.failed = False
 			moved = False
 			if self.gravity_fall():
 				moved= False #True
@@ -376,7 +378,7 @@ class Game:
 						self.count = 60
 
 			if pyxel.btnp(pyxel.KEY_X) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B):  # 逃げる
-				if pyxel.rndi(0, 255) < 224:  # 87%成功
+				if pyxel.rndi(0, 255) < 153:  # 60%成功
 					self.failed = False
 					self.count = 30
 					self.mode = MODE_ESCAPE
@@ -385,7 +387,6 @@ class Game:
 					self.hp -= self.enemy_atk
 					self.count = 60
 					if self.hp <= 0:
-						self.hp = 20 + 5 * self.level
 						self.count = 60
 						self.mode = MODE_OVER
 						self.parse_map()
