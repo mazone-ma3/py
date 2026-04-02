@@ -4,9 +4,32 @@ import random
 import json
 import os
 
+class Particle:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.vx = random.uniform(-3, 3)
+        self.vy = random.uniform(-3, 3)
+        self.life = 30 + random.randint(0, 15)   # 30?45フレーム持続
+        self.color = random.choice([8, 9, 10, 14])  # 赤・黄・オレンジ系
+
+    def update(self):
+        self.x += self.vx
+        self.y += self.vy
+        self.vx *= 0.95
+        self.vy *= 0.95
+        self.life -= 1
+
+    def draw(self):
+        if self.life > 0:
+            size = 1 if self.life > 15 else 0
+            pyxel.pset(int(self.x), int(self.y), self.color)
+            if size == 1 and self.life % 3 == 0:
+                pyxel.pset(int(self.x + 1), int(self.y), 7)  # 少し光る感じ
+
 class App:
     def __init__(self):
-        pyxel.init(256, 192, title="Simple Shmup - With High Score", fps=60)
+        pyxel.init(256, 192, title="Simple Shmup - Explosion Effect", fps=60)
 
         # 効果音
         pyxel.sound(0).set("c3e3g3", tones="t", volumes="4", effects="f", speed=10)   # 自機ショット
@@ -15,6 +38,7 @@ class App:
         pyxel.sound(3).set("c2a1f1", tones="p", volumes="7", effects="n", speed=20)   # ゲームオーバー
 
         self.high_score = self.load_high_score()
+        self.particles = []   # 爆発パーティクルリスト
         self.reset()
         pyxel.run(self.update, self.draw)
 
@@ -34,7 +58,7 @@ class App:
             with open("highscore.json", "w") as f:
                 json.dump(data, f)
         except:
-            pass  # 保存失敗してもゲームは続ける
+            pass
 
     def reset(self):
         self.player_x = 30
@@ -43,6 +67,7 @@ class App:
 
         self.bullets = []
         self.enemy_bullets = []
+        self.particles = []
 
         self.enemies = []          # [x, y, shoot_timer]
         self.enemy_spawn_timer = 0
@@ -92,7 +117,7 @@ class App:
             if b[0] > pyxel.width:
                 self.bullets.remove(b)
 
-        # 敵出現（スコアに応じて速くなる）
+        # 敵出現
         self.enemy_spawn_timer += 1
         spawn_interval = max(20, 50 - (self.score // 150))
         if self.enemy_spawn_timer > spawn_interval:
@@ -131,18 +156,24 @@ class App:
             if eb[0] < -10 or eb[0] > pyxel.width + 10 or eb[1] < -10 or eb[1] > pyxel.height + 10:
                 self.enemy_bullets.remove(eb)
 
-        # 当たり判定：自機弾 vs 敵
+        # 当たり判定：自機弾 vs 敵 → 爆発発生！
         for b in self.bullets[:]:
             for e in self.enemies[:]:
                 if (b[0] < e[0] + 16 and b[0] + 8 > e[0] and
                     b[1] < e[1] + 16 and b[1] + 4 > e[1]):
                     if b in self.bullets: self.bullets.remove(b)
-                    if e in self.enemies: self.enemies.remove(e)
+                    if e in self.enemies:
+                        # 爆発エフェクト生成（敵の中心位置）
+                        ex = e[0] + 8
+                        ey = e[1] + 8
+                        for _ in range(18):      # 18個のパーティクル
+                            self.particles.append(Particle(ex, ey))
+                        self.enemies.remove(e)
                     self.score += 100
-                    pyxel.play(1, 1)
+                    pyxel.play(1, 1)   # 撃破音
                     break
 
-        # 当たり判定：敵弾 vs プレイヤー / プレイヤー vs 敵
+        # 当たり判定：敵弾 vs プレイヤー
         for eb in self.enemy_bullets[:]:
             if (self.player_x < eb[0] + 4 and self.player_x + 16 > eb[0] and
                 self.player_y < eb[1] + 4 and self.player_y + 16 > eb[1]):
@@ -150,6 +181,7 @@ class App:
                 pyxel.play(3, 3)
                 break
 
+        # 当たり判定：プレイヤー vs 敵
         for e in self.enemies[:]:
             if (self.player_x < e[0] + 16 and self.player_x + 16 > e[0] and
                 self.player_y < e[1] + 16 and self.player_y + 16 > e[1]):
@@ -157,7 +189,13 @@ class App:
                 pyxel.play(3, 3)
                 break
 
-        # ゲームオーバー時にハイスコア更新
+        # パーティクル更新
+        for p in self.particles[:]:
+            p.update()
+            if p.life <= 0:
+                self.particles.remove(p)
+
+        # ハイスコア更新
         if self.game_over and self.score > self.high_score:
             self.high_score = self.score
             self.save_high_score()
@@ -191,6 +229,10 @@ class App:
         # 敵弾
         for eb in self.enemy_bullets:
             pyxel.rect(eb[0], eb[1], 5, 5, 8)
+
+        # 爆発エフェクト
+        for p in self.particles:
+            p.draw()
 
         # UI
         pyxel.text(4, 4, f"SCORE: {self.score}", 7)
