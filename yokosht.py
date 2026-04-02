@@ -10,8 +10,8 @@ class Particle:
         self.y = y
         self.vx = random.uniform(-3, 3)
         self.vy = random.uniform(-3, 3)
-        self.life = 30 + random.randint(0, 15)   # 30?45フレーム持続
-        self.color = random.choice([8, 9, 10, 14])  # 赤・黄・オレンジ系
+        self.life = 30 + random.randint(0, 15)
+        self.color = random.choice([8, 9, 10, 14])
 
     def update(self):
         self.x += self.vx
@@ -22,23 +22,22 @@ class Particle:
 
     def draw(self):
         if self.life > 0:
-            size = 1 if self.life > 15 else 0
             pyxel.pset(int(self.x), int(self.y), self.color)
-            if size == 1 and self.life % 3 == 0:
-                pyxel.pset(int(self.x + 1), int(self.y), 7)  # 少し光る感じ
+            if self.life > 15 and self.life % 3 == 0:
+                pyxel.pset(int(self.x + 1), int(self.y), 7)
 
 class App:
     def __init__(self):
-        pyxel.init(256, 192, title="Simple Shmup - Explosion Effect", fps=60)
+        pyxel.init(256, 192, title="Simple Shmup - Gamepad Support", fps=60)
 
-        # 効果音
-        pyxel.sound(0).set("c3e3g3", tones="t", volumes="4", effects="f", speed=10)   # 自機ショット
-        pyxel.sound(1).set("c2c2c1", tones="p", volumes="6", effects="n", speed=15)   # 敵撃破
-        pyxel.sound(2).set("g2e2", tones="s", volumes="5", effects="f", speed=8)      # 敵射撃
-        pyxel.sound(3).set("c2a1f1", tones="p", volumes="7", effects="n", speed=20)   # ゲームオーバー
+        # 効果音（非推奨警告を回避）
+        pyxel.sounds[0].set("c3e3g3", tones="t", volumes="4", effects="f", speed=10)   # 自機ショット
+        pyxel.sounds[1].set("c2c2c1", tones="p", volumes="6", effects="n", speed=15)   # 敵撃破
+        pyxel.sounds[2].set("g2e2", tones="s", volumes="5", effects="f", speed=8)      # 敵射撃
+        pyxel.sounds[3].set("c2a1f1", tones="p", volumes="7", effects="n", speed=20)   # ゲームオーバー
 
         self.high_score = self.load_high_score()
-        self.particles = []   # 爆発パーティクルリスト
+        self.particles = []
         self.reset()
         pyxel.run(self.update, self.draw)
 
@@ -46,24 +45,22 @@ class App:
         if os.path.exists("highscore.json"):
             try:
                 with open("highscore.json", "r") as f:
-                    data = json.load(f)
-                    return data.get("high_score", 0)
+                    return json.load(f).get("high_score", 0)
             except:
                 return 0
         return 0
 
     def save_high_score(self):
-        data = {"high_score": self.high_score}
         try:
             with open("highscore.json", "w") as f:
-                json.dump(data, f)
+                json.dump({"high_score": self.high_score}, f)
         except:
             pass
 
     def reset(self):
         self.player_x = 30
         self.player_y = 80
-        self.player_speed = 2
+        self.player_speed = 2.0
 
         self.bullets = []
         self.enemy_bullets = []
@@ -87,26 +84,37 @@ class App:
 
     def update(self):
         if self.game_over:
-            if pyxel.btnp(pyxel.KEY_R):
+            if pyxel.btnp(pyxel.KEY_R) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A):
                 self.reset()
             return
 
-        # プレイヤー移動
-        if pyxel.btn(pyxel.KEY_UP) or pyxel.btn(pyxel.KEY_W):
-            self.player_y -= self.player_speed
-        if pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.KEY_S):
-            self.player_y += self.player_speed
-        if pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.KEY_A):
+        # === 移動（キーボード + ゲームパッド D-Pad）===
+        if (pyxel.btn(pyxel.KEY_LEFT) or 
+            pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT)):
             self.player_x -= self.player_speed
-        if pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.KEY_D):
+        if (pyxel.btn(pyxel.KEY_RIGHT) or 
+            pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT)):
             self.player_x += self.player_speed
+        if (pyxel.btn(pyxel.KEY_UP) or 
+            pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_UP)):
+            self.player_y -= self.player_speed
+        if (pyxel.btn(pyxel.KEY_DOWN) or 
+            pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN)):
+            self.player_y += self.player_speed
+
+        # WASDも併用
+        if pyxel.btn(pyxel.KEY_A): self.player_x -= self.player_speed
+        if pyxel.btn(pyxel.KEY_D): self.player_x += self.player_speed
+        if pyxel.btn(pyxel.KEY_W): self.player_y -= self.player_speed
+        if pyxel.btn(pyxel.KEY_S): self.player_y += self.player_speed
 
         self.player_x = max(0, min(self.player_x, pyxel.width - 20))
         self.player_y = max(0, min(self.player_y, pyxel.height - 16))
 
-        # 自機自動連射
+        # === 射撃（スペース or ゲームパッド Aボタン）===
         self.shoot_timer += 1
-        if pyxel.btn(pyxel.KEY_SPACE) and self.shoot_timer > 8:
+        if ((pyxel.btn(pyxel.KEY_SPACE) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_A)) 
+            and self.shoot_timer > 8):
             self.bullets.append([self.player_x + 16, self.player_y + 6])
             self.shoot_timer = 0
             pyxel.play(0, 0)
@@ -129,7 +137,6 @@ class App:
         for e in self.enemies[:]:
             e[0] -= 2
             e[2] += 1
-
             min_interval = max(35, 75 - (self.score // 200))
 
             if e[2] > min_interval:
@@ -156,24 +163,23 @@ class App:
             if eb[0] < -10 or eb[0] > pyxel.width + 10 or eb[1] < -10 or eb[1] > pyxel.height + 10:
                 self.enemy_bullets.remove(eb)
 
-        # 当たり判定：自機弾 vs 敵 → 爆発発生！
+        # 当たり判定：自機弾 vs 敵 → 爆発
         for b in self.bullets[:]:
             for e in self.enemies[:]:
                 if (b[0] < e[0] + 16 and b[0] + 8 > e[0] and
                     b[1] < e[1] + 16 and b[1] + 4 > e[1]):
                     if b in self.bullets: self.bullets.remove(b)
                     if e in self.enemies:
-                        # 爆発エフェクト生成（敵の中心位置）
                         ex = e[0] + 8
                         ey = e[1] + 8
-                        for _ in range(18):      # 18個のパーティクル
+                        for _ in range(18):
                             self.particles.append(Particle(ex, ey))
                         self.enemies.remove(e)
                     self.score += 100
-                    pyxel.play(1, 1)   # 撃破音
+                    pyxel.play(1, 1)
                     break
 
-        # 当たり判定：敵弾 vs プレイヤー
+        # 当たり判定：敵弾 vs プレイヤー / プレイヤー vs 敵
         for eb in self.enemy_bullets[:]:
             if (self.player_x < eb[0] + 4 and self.player_x + 16 > eb[0] and
                 self.player_y < eb[1] + 4 and self.player_y + 16 > eb[1]):
@@ -181,7 +187,6 @@ class App:
                 pyxel.play(3, 3)
                 break
 
-        # 当たり判定：プレイヤー vs 敵
         for e in self.enemies[:]:
             if (self.player_x < e[0] + 16 and self.player_x + 16 > e[0] and
                 self.player_y < e[1] + 16 and self.player_y + 16 > e[1]):
@@ -243,6 +248,6 @@ class App:
             pyxel.text(55, 85, f"FINAL SCORE: {self.score}", 7)
             if self.score == self.high_score and self.score > 0:
                 pyxel.text(65, 100, "NEW HIGH SCORE!", 10)
-            pyxel.text(60, 120, "PRESS R TO RESTART", 7)
+            pyxel.text(55, 120, "PRESS R or A TO RESTART", 7)
 
 App()
