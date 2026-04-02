@@ -103,7 +103,7 @@ class BombItem:
 
 class App:
     def __init__(self):
-        pyxel.init(256, 192, title="Simple Shmup - Increasing Difficulty", fps=60)
+        pyxel.init(256, 192, title="Simple Shmup - Time-based Difficulty", fps=60)
 
         # 効果音
         pyxel.sounds[0].set("c3e3g3", tones="t", volumes="4", effects="f", speed=10)
@@ -159,6 +159,7 @@ class App:
 
         self.shoot_timer = 0
         self.score = 0
+        self.play_time = 0          # ← 新規追加：経過時間（フレーム数）
         self.game_over = False
 
         self.stars = []
@@ -172,6 +173,8 @@ class App:
             if pyxel.btnp(pyxel.KEY_R) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A):
                 self.reset()
             return
+
+        self.play_time += 1   # 毎フレーム時間をカウント
 
         # 移動
         if pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT): self.player_x -= self.player_speed
@@ -204,9 +207,9 @@ class App:
             if b[0] > pyxel.width:
                 self.bullets.remove(b)
 
-        # 敵出現（スコアで少し速く出現）
+        # 敵出現
         self.enemy_spawn_timer += 1
-        spawn_interval = max(18, 50 - (self.score // 200))
+        spawn_interval = max(18, 50 - (self.score // 250))
         if self.enemy_spawn_timer > spawn_interval:
             rand = random.random()
             if rand < 0.60: enemy_type = 0
@@ -238,10 +241,10 @@ class App:
                 e[0] -= 1.9
                 e[1] = e[4] + math.sin(e[3] * 0.12) * 55
 
-            # 難易度計算（スコアで速度と間隔が変わる）
-            difficulty = min(1.0, self.score / 8000)   # 8000スコアで最大難易度
-            enemy_bullet_speed = 2.4 + difficulty * 1.4   # 2.4 → 3.8
-            shoot_interval = int(80 - difficulty * 35)     # 80 → 45
+            # === 時間経過で難易度上昇（緩やか）===
+            difficulty = min(1.0, self.play_time / 10800.0)   # 約180秒（3分）で最大難易度
+            enemy_bullet_speed = 2.4 + difficulty * 1.2       # 2.4 → 最大 3.6
+            shoot_interval = int(82 - difficulty * 36)        # 82 → 最小 46
 
             # 最初の射撃
             if not e[6] and 18 <= e[3] <= 40:
@@ -255,7 +258,7 @@ class App:
                 pyxel.play(2, 2)
                 e[6] = True
 
-            # 通常射撃（間隔が徐々に短くなる）
+            # 通常射撃
             elif e[6] and e[3] % shoot_interval == 0 and random.random() < 0.60:
                 sx = e[0] + 8
                 sy = e[1] + 8
@@ -474,6 +477,9 @@ class App:
         pyxel.text(4, 14, f"HIGH: {self.high_score}", 7)
         pyxel.text(180, 4, f"OPTIONS: {len(self.options)}", 7)
         pyxel.text(200, 14, f"BOMB: {self.bomb_stock}", 8)
+
+        # 経過時間表示（デバッグ用）
+        pyxel.text(4, 34, f"TIME: {self.play_time//60}s", 7)
 
         if self.option_cooldown > 0:
             pyxel.text(4, 24, f"NEXT OPTION: {self.option_cooldown}", 10)
