@@ -103,7 +103,7 @@ class BombItem:
 
 class App:
     def __init__(self):
-        pyxel.init(256, 192, title="Simple Shmup - Fast First Shot (1 bullet)", fps=60)
+        pyxel.init(256, 192, title="Simple Shmup - First Shot Fixed", fps=60)
 
         # 効果音
         pyxel.sounds[0].set("c3e3g3", tones="t", volumes="4", effects="f", speed=10)
@@ -216,16 +216,16 @@ class App:
 
             base_y = pyxel.rndi(30, pyxel.height - 40)
             hp = 1 if enemy_type == 0 else 3
-            self.enemies.append([pyxel.width, base_y, enemy_type, 0, base_y, hp, False])  # has_fired_first
+            self.enemies.append([pyxel.width, base_y, enemy_type, 0, base_y, hp, False])  # has_fired_first = False
             self.enemy_spawn_timer = 0
 
         # 敵更新
         for e in self.enemies[:]:
             e[3] += 1  # timer
 
-            if e[2] == 0:        # 通常敵
+            if e[2] == 0:        # 0: 通常敵
                 e[0] -= 2.2
-            elif e[2] == 1:      # ヘリザコ
+            elif e[2] == 1:      # 1: ヘリザコ
                 dist_x = e[0] - self.player_x
                 if dist_x > 105 and e[3] < 160:
                     e[0] -= 2.1
@@ -235,12 +235,12 @@ class App:
                     e[0] -= 0.4
                 else:
                     e[0] += 3.7
-            elif e[2] == 2:      # サインカーブ
+            elif e[2] == 2:      # 2: サインカーブ
                 e[0] -= 1.9
                 e[1] = e[4] + math.sin(e[3] * 0.12) * 55
 
-            # === 最初の射撃を早く、かつ確実に1発だけ ===
-            if not e[6] and 12 <= e[3] <= 30:          # 出現後12?30フレームの間に1回だけ
+            # 最初の射撃（1発だけ、早く）
+            if not e[6] and 12 <= e[3] <= 30:
                 sx, sy = e[0] + 8, e[1] + 8
                 px, py = self.player_x + 8, self.player_y + 8
                 dx = px - sx
@@ -251,9 +251,9 @@ class App:
                 vy = (dy / dist) * speed
                 self.enemy_bullets.append([sx, sy, vx, vy])
                 pyxel.play(2, 2)
-                e[6] = True                             # 初弾発射済みフラグ
+                e[6] = True   # 初弾発射済み
 
-            # 通常射撃（初弾以降）
+            # 通常射撃
             elif e[6] and e[3] % 55 == 0 and random.random() < 0.65:
                 sx, sy = e[0] + 8, e[1] + 8
                 px, py = self.player_x + 8, self.player_y + 8
@@ -287,7 +287,6 @@ class App:
                     b[1] < e[1] + 16 and b[1] + 4 > e[1]):
 
                     e[5] -= 1
-
                     del self.bullets[b_idx]
 
                     if e[5] <= 0:
@@ -316,7 +315,7 @@ class App:
 
                     break
 
-        # アイテム処理（省略）
+        # アイテム処理
         for item in self.chain_items[:]:
             item.update()
             if abs(self.player_x + 8 - item.x) < 20 and abs(self.player_y + 8 - item.y) < 20:
@@ -447,13 +446,15 @@ class App:
         for b in self.bullets:
             pyxel.rect(b[0], b[1], 8, 4, 9)
 
+        # 敵描画（HPで色変化）
         for e in self.enemies:
             if e[2] == 0:
                 col = 8
             elif e[2] == 1:
-                col = 10
+                col = 10 if e[5] == 3 else (9 if e[5] == 2 else 4)
             else:
-                col = 11
+                col = 11 if e[5] == 3 else (9 if e[5] == 2 else 4)
+
             pyxel.rect(e[0], int(e[1]), 16, 16, col)
             pyxel.rect(e[0] + 4, int(e[1]) + 4, 8, 8, 7)
 
@@ -478,6 +479,7 @@ class App:
         for p in self.particles:
             p.draw()
 
+        # UI
         pyxel.text(4, 4, f"SCORE: {self.score}", 7)
         pyxel.text(4, 14, f"HIGH: {self.high_score}", 7)
         pyxel.text(180, 4, f"OPTIONS: {len(self.options)}", 7)
