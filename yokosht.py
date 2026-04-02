@@ -103,14 +103,14 @@ class BombItem:
 
 class App:
     def __init__(self):
-        pyxel.init(256, 192, title="Simple Shmup - Bomb Item", fps=60)
+        pyxel.init(256, 192, title="Simple Shmup - Fast First Shot (1 bullet)", fps=60)
 
-        # 効果音（チャンネル4は使えないので3に変更）
-        pyxel.sounds[0].set("c3e3g3", tones="t", volumes="4", effects="f", speed=10)   # 通常ショット
-        pyxel.sounds[1].set("c2c2c1", tones="p", volumes="6", effects="n", speed=15)   # 撃破
-        pyxel.sounds[2].set("g2e2", tones="s", volumes="5", effects="f", speed=8)      # 敵射撃
-        pyxel.sounds[3].set("c2a1f1", tones="p", volumes="7", effects="n", speed=20)   # ゲームオーバー
-        pyxel.sounds[4].set("c2c2c3c2", tones="t", volumes="7", effects="n", speed=8)  # ボム使用音（修正済み）
+        # 効果音
+        pyxel.sounds[0].set("c3e3g3", tones="t", volumes="4", effects="f", speed=10)
+        pyxel.sounds[1].set("c2c2c1", tones="p", volumes="6", effects="n", speed=15)
+        pyxel.sounds[2].set("g2e2", tones="s", volumes="5", effects="f", speed=8)
+        pyxel.sounds[3].set("c2a1f1", tones="p", volumes="7", effects="n", speed=20)
+        pyxel.sounds[4].set("c2c2c3c2", tones="t", volumes="7", effects="n", speed=8)
 
         self.high_score = self.load_high_score()
         self.particles = []
@@ -152,7 +152,7 @@ class App:
         self.chain_count = 0
         self.chain_timer = 0
 
-        self.enemies = []
+        self.enemies = []   # [x, y, type, timer, base_y, hp, has_fired_first]
         self.enemy_spawn_timer = 0
         self.kill_count = 0
 
@@ -194,7 +194,7 @@ class App:
             self.shoot_timer = 0
             pyxel.play(0, 0)
 
-        # ボム使用（Bキー or ゲームパッド Bボタン）
+        # ボム使用
         if (pyxel.btnp(pyxel.KEY_B) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B)) and self.bomb_stock > 0:
             self.use_bomb()
 
@@ -206,16 +206,55 @@ class App:
         # 敵出現
         self.enemy_spawn_timer += 1
         if self.enemy_spawn_timer > max(20, 50 - (self.score // 150)):
-            self.enemies.append([pyxel.width, pyxel.rndi(10, pyxel.height - 20), pyxel.rndi(60, 100)])
+            rand = random.random()
+            if rand < 0.60:
+                enemy_type = 0
+            elif rand < 0.85:
+                enemy_type = 1
+            else:
+                enemy_type = 2
+
+            base_y = pyxel.rndi(30, pyxel.height - 40)
+            hp = 1 if enemy_type == 0 else 3
+            self.enemies.append([pyxel.width, base_y, enemy_type, 0, base_y, hp, False])  # has_fired_first
             self.enemy_spawn_timer = 0
 
-        # 敵移動 + 射撃
+        # 敵更新
         for e in self.enemies[:]:
-            e[0] -= 2
-            e[2] += 1
-            min_interval = max(35, 75 - (self.score // 200))
+            e[3] += 1  # timer
 
-            if e[2] > min_interval:
+            if e[2] == 0:        # 通常敵
+                e[0] -= 2.2
+            elif e[2] == 1:      # ヘリザコ
+                dist_x = e[0] - self.player_x
+                if dist_x > 105 and e[3] < 160:
+                    e[0] -= 2.1
+                    target_y = self.player_y + 8
+                    e[1] += (target_y - e[1]) * 0.06
+                elif dist_x > 40 and e[3] < 190:
+                    e[0] -= 0.4
+                else:
+                    e[0] += 3.7
+            elif e[2] == 2:      # サインカーブ
+                e[0] -= 1.9
+                e[1] = e[4] + math.sin(e[3] * 0.12) * 55
+
+            # === 最初の射撃を早く、かつ確実に1発だけ ===
+            if not e[6] and 12 <= e[3] <= 30:          # 出現後12?30フレームの間に1回だけ
+                sx, sy = e[0] + 8, e[1] + 8
+                px, py = self.player_x + 8, self.player_y + 8
+                dx = px - sx
+                dy = py - sy
+                dist = math.hypot(dx, dy) or 1
+                speed = 3.1
+                vx = (dx / dist) * speed
+                vy = (dy / dist) * speed
+                self.enemy_bullets.append([sx, sy, vx, vy])
+                pyxel.play(2, 2)
+                e[6] = True                             # 初弾発射済みフラグ
+
+            # 通常射撃（初弾以降）
+            elif e[6] and e[3] % 55 == 0 and random.random() < 0.65:
                 sx, sy = e[0] + 8, e[1] + 8
                 px, py = self.player_x + 8, self.player_y + 8
                 dx = px - sx
@@ -226,12 +265,10 @@ class App:
                 speed = base_speed * (1.0 - 0.22 * direction_factor)
                 vx = (dx / dist) * speed
                 vy = (dy / dist) * speed
-
                 self.enemy_bullets.append([sx, sy, vx, vy])
-                e[2] = pyxel.rndi(-15, 10)
                 pyxel.play(2, 2)
 
-            if e[0] < -16:
+            if e[0] < -40 or e[0] > pyxel.width + 60:
                 self.enemies.remove(e)
 
         # 敵弾更新
@@ -249,30 +286,37 @@ class App:
                 if (b[0] < e[0] + 16 and b[0] + 8 > e[0] and
                     b[1] < e[1] + 16 and b[1] + 4 > e[1]):
 
-                    ex = e[0] + 8
-                    ey = e[1] + 8
-                    for _ in range(18):
-                        self.particles.append(Particle(ex, ey))
+                    e[5] -= 1
 
-                    del self.enemies[e_idx]
                     del self.bullets[b_idx]
 
-                    self.score += 100
-                    self.kill_count += 1
-                    pyxel.play(1, 1)
+                    if e[5] <= 0:
+                        ex = e[0] + 8
+                        ey = e[1] + 8
+                        for _ in range(22):
+                            self.particles.append(Particle(ex, ey))
 
-                    if random.random() < 0.40:
-                        self.chain_items.append(ChainItem(ex, ey))
-                    if random.random() < 0.15 and len(self.options) < 2:
-                        self.option_items.append(OptionItem(ex, ey))
-                    if random.random() < 0.12 and not self.shield_active:
-                        self.shield_items.append(ShieldItem(ex, ey))
-                    if random.random() < 0.10 and self.bomb_stock < 3:
-                        self.bomb_items.append(BombItem(ex, ey))
+                        del self.enemies[e_idx]
+
+                        self.score += 100
+                        self.kill_count += 1
+                        pyxel.play(1, 1)
+
+                        if random.random() < 0.40:
+                            self.chain_items.append(ChainItem(ex, ey))
+                        if random.random() < 0.15 and len(self.options) < 2:
+                            self.option_items.append(OptionItem(ex, ey))
+                        if random.random() < 0.12 and not self.shield_active:
+                            self.shield_items.append(ShieldItem(ex, ey))
+                        if random.random() < 0.10 and self.bomb_stock < 3:
+                            self.bomb_items.append(BombItem(ex, ey))
+                    else:
+                        for _ in range(6):
+                            self.particles.append(Particle(e[0] + 8, e[1] + 8))
 
                     break
 
-        # チェインアイテム処理
+        # アイテム処理（省略）
         for item in self.chain_items[:]:
             item.update()
             if abs(self.player_x + 8 - item.x) < 20 and abs(self.player_y + 8 - item.y) < 20:
@@ -291,7 +335,6 @@ class App:
             if self.chain_timer <= 0:
                 self.chain_count = 0
 
-        # オプションアイテム処理
         for item in self.option_items[:]:
             item.update()
             if abs(self.player_x + 8 - item.x) < 22 and abs(self.player_y + 8 - item.y) < 22:
@@ -304,7 +347,6 @@ class App:
             if item.x < -20 or item.timer <= 0:
                 self.option_items.remove(item)
 
-        # シールドアイテム処理
         for item in self.shield_items[:]:
             item.update()
             if abs(self.player_x + 8 - item.x) < 22 and abs(self.player_y + 8 - item.y) < 22:
@@ -315,7 +357,6 @@ class App:
             if item.x < -20 or item.timer <= 0:
                 self.shield_items.remove(item)
 
-        # ボムアイテム処理
         for item in self.bomb_items[:]:
             item.update()
             if abs(self.player_x + 8 - item.x) < 22 and abs(self.player_y + 8 - item.y) < 22:
@@ -326,7 +367,6 @@ class App:
             if item.x < -20 or item.timer <= 0:
                 self.bomb_items.remove(item)
 
-        # オプション更新
         for opt in self.options:
             opt.update(self.player_x, self.player_y)
 
@@ -378,16 +418,13 @@ class App:
         if self.bomb_stock <= 0:
             return
         self.bomb_stock -= 1
-        pyxel.play(3, 4)        # ← ここを修正（チャンネル3を使用）
+        pyxel.play(3, 4)
 
-        # 大きな爆発エフェクト
         for _ in range(90):
             self.particles.append(Particle(random.randint(20, 236), random.randint(20, 172)))
 
-        # 全敵・全敵弾消滅
         self.enemies.clear()
         self.enemy_bullets.clear()
-
         self.score += 200
 
     def draw(self):
@@ -411,8 +448,14 @@ class App:
             pyxel.rect(b[0], b[1], 8, 4, 9)
 
         for e in self.enemies:
-            pyxel.rect(e[0], e[1], 16, 16, 8)
-            pyxel.rect(e[0] + 4, e[1] + 4, 8, 8, 14)
+            if e[2] == 0:
+                col = 8
+            elif e[2] == 1:
+                col = 10
+            else:
+                col = 11
+            pyxel.rect(e[0], int(e[1]), 16, 16, col)
+            pyxel.rect(e[0] + 4, int(e[1]) + 4, 8, 8, 7)
 
         for eb in self.enemy_bullets:
             pyxel.rect(eb[0], eb[1], 5, 5, 8)
@@ -435,7 +478,6 @@ class App:
         for p in self.particles:
             p.draw()
 
-        # UI
         pyxel.text(4, 4, f"SCORE: {self.score}", 7)
         pyxel.text(4, 14, f"HIGH: {self.high_score}", 7)
         pyxel.text(180, 4, f"OPTIONS: {len(self.options)}", 7)
