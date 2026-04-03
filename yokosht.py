@@ -159,7 +159,7 @@ class App:
 
         self.shoot_timer = 0
         self.score = 0
-        self.play_time = 0          # ← 新規追加：経過時間（フレーム数）
+        self.play_time = 0          # 経過時間（フレーム）
         self.game_over = False
 
         self.stars = []
@@ -174,7 +174,7 @@ class App:
                 self.reset()
             return
 
-        self.play_time += 1   # 毎フレーム時間をカウント
+        self.play_time += 1
 
         # 移動
         if pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT): self.player_x -= self.player_speed
@@ -209,8 +209,7 @@ class App:
 
         # 敵出現
         self.enemy_spawn_timer += 1
-        spawn_interval = max(18, 50 - (self.score // 250))
-        if self.enemy_spawn_timer > spawn_interval:
+        if self.enemy_spawn_timer > max(18, 50 - (self.score // 250)):
             rand = random.random()
             if rand < 0.60: enemy_type = 0
             elif rand < 0.85: enemy_type = 1
@@ -225,28 +224,30 @@ class App:
         for e in self.enemies[:]:
             e[3] += 1
 
-            if e[2] == 0:
+            if e[2] == 0:        # 通常敵
                 e[0] -= 2.2
-            elif e[2] == 1:
+
+            elif e[2] == 1:      # ヘリザコ - 勢いよく突っ込む
                 dist_x = e[0] - self.player_x
-                if dist_x > 105 and e[3] < 160:
-                    e[0] -= 2.1
-                    target_y = self.player_y + 8
-                    e[1] += (target_y - e[1]) * 0.06
-                elif dist_x > 40 and e[3] < 190:
-                    e[0] -= 0.4
-                else:
-                    e[0] += 3.7
-            elif e[2] == 2:
+
+                if e[3] < 24:                                # 1段階：超急接近
+                    e[0] -= 5.7
+                    e[1] += (self.player_y + 8 - e[1]) * 0.13
+                elif e[3] < 49:                              # 2段階：短くホバリング
+                    e[0] -= 0.25
+                else:                                        # 3段階：右へ全力逃走
+                    e[0] += 5.5
+
+            elif e[2] == 2:      # サインカーブ
                 e[0] -= 1.9
                 e[1] = e[4] + math.sin(e[3] * 0.12) * 55
 
-            # === 時間経過で難易度上昇（緩やか）===
-            difficulty = min(1.0, self.play_time / 10800.0)   # 約180秒（3分）で最大難易度
-            enemy_bullet_speed = 2.4 + difficulty * 1.2       # 2.4 → 最大 3.6
-            shoot_interval = int(82 - difficulty * 36)        # 82 → 最小 46
+            # 難易度計算（時間経過）
+            difficulty = min(1.0, self.play_time / 10800.0)
+            enemy_bullet_speed = 2.4 + difficulty * 1.2
+            shoot_interval = int(82 - difficulty * 36)
 
-            # 最初の射撃
+            # 射撃
             if not e[6] and 18 <= e[3] <= 40:
                 sx = e[0] + 8
                 sy = e[1] + 8
@@ -258,7 +259,6 @@ class App:
                 pyxel.play(2, 2)
                 e[6] = True
 
-            # 通常射撃
             elif e[6] and e[3] % shoot_interval == 0 and random.random() < 0.60:
                 sx = e[0] + 8
                 sy = e[1] + 8
@@ -478,8 +478,8 @@ class App:
         pyxel.text(180, 4, f"OPTIONS: {len(self.options)}", 7)
         pyxel.text(200, 14, f"BOMB: {self.bomb_stock}", 8)
 
-        # 経過時間表示（デバッグ用）
-        pyxel.text(4, 34, f"TIME: {self.play_time//60}s", 7)
+        # タイムカウント表示（復活）
+        pyxel.text(4, 34, f"TIME: {self.play_time // 60}s", 7)
 
         if self.option_cooldown > 0:
             pyxel.text(4, 24, f"NEXT OPTION: {self.option_cooldown}", 10)
