@@ -32,11 +32,11 @@ class App:
         pyxel.run(self.update, self.draw)
 
     def setup_sounds(self):
-        pyxel.sound(0).set("a3", "s", "7", "f", 10)      # 射撃
-        pyxel.sound(1).set("c2c3c4", "p", "7", "f", 25)  # ボム
-        pyxel.sound(2).set("c4", "t", "7", "v", 8)       # 敵撃破
-        pyxel.sound(3).set("e4g4", "s", "7", "f", 12)    # アイテム
-        pyxel.sound(4).set("f2f1", "n", "7", "f", 15)    # ダメージ
+        pyxel.sound(0).set("a3", "s", "7", "f", 10)
+        pyxel.sound(1).set("c2c3c4", "p", "7", "f", 25)
+        pyxel.sound(2).set("c4", "t", "7", "v", 8)
+        pyxel.sound(3).set("e4g4", "s", "7", "f", 12)
+        pyxel.sound(4).set("f2f1", "n", "7", "f", 15)
 
     def load_highscore(self):
         if os.path.exists("highscore.dat"):
@@ -123,7 +123,7 @@ class App:
         spawn_interval = max(38 - diff * 8, 18)
         if self.frame % spawn_interval == 0:
             etype = random.choices([0,1,2,3], weights=[40,25,20,15])[0]
-            hp = 3 + diff * 2
+            hp = 4 + diff * 1.8
             self.enemies.append([random.randint(20, pyxel.width-25), -20, etype, 0, hp])
 
         # 敵更新
@@ -131,12 +131,15 @@ class App:
             e[3] += 1
             etype = e[2]
 
-            if etype == 0: e[1] += 1.1 + diff*0.1
-            elif etype == 1: 
+            if etype == 0: 
+                e[1] += 1.1 + diff*0.1
+            elif etype == 1:   # サインカーブ敵（振れ重視）
                 e[1] += 0.85 + diff*0.05
-                e[0] += math.sin(e[3] * 0.15) * 3.2   # ← 振れ幅を大きく
-            elif etype == 2: e[1] += 2.2 + diff*0.3
-            elif etype == 3: e[1] += 0.65 + diff*0.1
+                e[0] += math.sin(e[3] * 0.13) * 4.5   # 過激に振る
+            elif etype == 2: 
+                e[1] += 2.2 + diff*0.3
+            elif etype == 3: 
+                e[1] += 0.65 + diff*0.1
 
             if e[3] % 45 == 0 and e[1] < 130:
                 if etype in (0,1):
@@ -181,7 +184,8 @@ class App:
         if self.invincible == 0:
             for b in self.bullets[:]:
                 for e in self.enemies[:]:
-                    if abs(b[0]-(e[0]+8)) < 9 and abs(b[1]-(e[1]+8)) < 9:
+                    hit_size = 10 if e[2] == 1 else 9
+                    if abs(b[0]-(e[0]+8)) < hit_size and abs(b[1]-(e[1]+8)) < hit_size:
                         e[4] -= 1
                         if b in self.bullets: self.bullets.remove(b)
                         if e[4] <= 0:
@@ -194,7 +198,8 @@ class App:
                         break
 
             for e in self.enemies[:]:
-                if abs(px - (e[0]+8)) < 13 and abs(py - (e[1]+8)) < 13:
+                hit_size = 14 if e[2] == 1 else 13
+                if abs(px - (e[0]+8)) < hit_size and abs(py - (e[1]+8)) < hit_size:
                     self.damage_player()
                     break
 
@@ -216,7 +221,6 @@ class App:
                 pyxel.play(3, 3)
                 self.items.remove(item)
 
-        # ハイスコア判定
         if self.game_over and self.score > self.high_score:
             self.high_score = self.score
             self.new_record = True
@@ -247,7 +251,6 @@ class App:
         base_speed = 1.45
         vx = (dx / dist) * base_speed
         vy = (dy / dist) * base_speed
-
         self.enemy_bullets.append([cx, cy, vx, vy, etype])
         self.enemy_bullets.append([cx, cy + 5, vx*0.95, vy*0.95, etype])
         self.enemy_bullets.append([cx, cy + 10, vx*0.9, vy*0.9, etype])
@@ -262,7 +265,7 @@ class App:
             for a in [-25, 0, 25]:
                 rad = math.radians(a)
                 self.bullets.append([x, y, math.sin(rad)*speed, -math.cos(rad)*speed])
-        else:  # 5way（角度狭め）
+        else:
             for a in [-26, -11, 0, 11, 26]:
                 rad = math.radians(a)
                 self.bullets.append([x, y, math.sin(rad)*speed, -math.cos(rad)*speed])
@@ -279,12 +282,12 @@ class App:
 
     def drop_item(self, x, y):
         if self.kill_count % 10 == 0:
-            self.items.append([x + 8, y + 8, 0])  # Power Up確定
+            self.items.append([x + 8, y + 8, 0])
         elif random.random() < 0.18:
             if random.random() < 0.5:
-                self.items.append([x + 8, y + 8, 1])  # Bomb
+                self.items.append([x + 8, y + 8, 1])
             else:
-                self.items.append([x + 8, y + 8, 2])  # S
+                self.items.append([x + 8, y + 8, 2])
 
     def power_down(self):
         if self.power > 0:
