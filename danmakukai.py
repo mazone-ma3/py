@@ -96,7 +96,6 @@ class App:
 
         diff = self.get_difficulty()
 
-        # 入力
         speed = self.player_speed
         if pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT):
             self.player_x -= speed
@@ -131,15 +130,12 @@ class App:
             e[3] += 1
             etype = e[2]
 
-            if etype == 0: 
-                e[1] += 1.1 + diff*0.1
-            elif etype == 1:   # サインカーブ敵（振れ重視）
+            if etype == 0: e[1] += 1.1 + diff*0.1
+            elif etype == 1: 
                 e[1] += 0.85 + diff*0.05
-                e[0] += math.sin(e[3] * 0.13) * 4.5   # 過激に振る
-            elif etype == 2: 
-                e[1] += 2.2 + diff*0.3
-            elif etype == 3: 
-                e[1] += 0.65 + diff*0.1
+                e[0] += math.sin(e[3] * 0.13) * 4.5
+            elif etype == 2: e[1] += 2.2 + diff*0.3
+            elif etype == 3: e[1] += 0.65 + diff*0.1
 
             if e[3] % 45 == 0 and e[1] < 130:
                 if etype in (0,1):
@@ -272,22 +268,24 @@ class App:
 
     def use_bomb(self):
         self.bombs -= 1
-        self.enemy_bullets.clear()
-        for e in self.enemies[:]:
-            e[4] -= 3
-            if e[4] <= 0:
-                self.enemies.remove(e)
-                self.score += 150
-                self.create_explosion(e[0]+8, e[1]+8)
+        self.enemy_bullets.clear()   # 敵弾全消去
 
+        # 敵全滅
+        for e in list(self.enemies):
+            self.create_explosion(e[0]+8, e[1]+8)
+            self.score += 150
+            self.enemies.remove(e)
+
+    # ====================== Sをバンバン出す ======================
     def drop_item(self, x, y):
         if self.kill_count % 10 == 0:
-            self.items.append([x + 8, y + 8, 0])
-        elif random.random() < 0.18:
-            if random.random() < 0.5:
+            self.items.append([x + 8, y + 8, 0])   # Power Up確定
+        else:
+            # Sをかなり出しやすく（70%）
+            if random.random() < 0.70:
+                self.items.append([x + 8, y + 8, 2])   # S
+            elif random.random() < 0.40:               # Bombは控えめ
                 self.items.append([x + 8, y + 8, 1])
-            else:
-                self.items.append([x + 8, y + 8, 2])
 
     def power_down(self):
         if self.power > 0:
