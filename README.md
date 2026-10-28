@@ -1,6 +1,6 @@
 My Pyxel Game
-This program uses Pyxel (MIT License) and includes code generated with assistance from [Grok and Gemini], created by [xAI & Google].
-See LICENSE file for Pyxel licensing details and xAI Terms of Service (https://x.ai/legal/terms-of-service) for Grok3 usage.
+This program uses Pyxel (Copyright (c) 2019 Takashi Kitao, MIT License).
+Portions of the code were developed with assistance from AI tools (Grok by xAI and Gemini by Google).
 
 実行はWebの方から出来ます。
 
