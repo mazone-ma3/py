@@ -8,4 +8,4 @@ Portions of the code were developed with assistance from AI tools (Grok by xAI a
 
 msx2.pyxpalとdigital.pyxpalを追加。MSX2標準パレットやデジタル8色パレットで描きたい方は自由にご利用下さい。
 
-Geminiで作成したmapditor.pyを追加。ELMSTMAP.MDTを編集できます。sc5edit.pyも追加。newv3.sc5の名前で編集できます。(2026/10/29)
+Geminiで作成したmapditor.pyを追加。ELMSTMAP.MDTを編集できます。sc5edit.pyも追加。.sc5を編集できます。(2026/10/29)
