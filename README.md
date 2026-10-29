@@ -1,5 +1,7 @@
 My Pyxel Game
+
 This program uses Pyxel (Copyright (c) 2019 Takashi Kitao, MIT License).
+
 Portions of the code were developed with assistance from AI tools (Grok by xAI and Gemini by Google).
 
 実行はWebの方から出来ます。
