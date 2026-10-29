@@ -2,7 +2,7 @@
 import pyxel
 
 # MSX2の標準16色パレット（24ビットRGB）
-MSX2_PALETTE = [
+MSX2_PALETTE_0 = [
     0x000000,
     0x010101,
     0x33CC33,
@@ -19,6 +19,25 @@ MSX2_PALETTE = [
     0xCC33CC,
     0x888888,
     0xFFFFFF,
+]
+
+MSX2_PALETTE = [
+    0x005f00,
+    0x000000,
+    0x3fdf3f,
+    0x7fff7f,
+    0x3f3fff,
+    0x5f7fff,
+    0xbf3f3f,
+    0x5fdfff,
+    0xff3f3f,
+    0xff7f7f,
+    0xdfdf3f,
+    0xdfdf7f,
+    0x3f9f3f,
+    0xdf5fbf,
+    0xbfbfbf,
+    0xffffff,
 ]
 
 

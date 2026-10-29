@@ -1,4 +1,24 @@
-﻿import pyxel
+﻿import os
+import pyxel
+
+MSX2_PALETTE = [
+    0x005f00,
+    0x000000,
+    0x3fdf3f,
+    0x7fff7f,
+    0x3f3fff,
+    0x5f7fff,
+    0xbf3f3f,
+    0x5fdfff,
+    0xff3f3f,
+    0xff7f7f,
+    0xdfdf3f,
+    0xdfdf7f,
+    0x3f9f3f,
+    0xdf5fbf,
+    0xbfbfbf,
+    0xffffff,
+]
 
 MAP_WIDTH = 128     # マップの横幅（ブロック単位）
 MAP_HEIGHT = 120    # マップの高さ（ブロック単位）
@@ -8,7 +28,11 @@ PATTERN_OFFSET = 7 + 0x3c00  # 2x2パターン定義の開始位置
 class CompleteMapEditor:
     def __init__(self):
         pyxel.init(256, 256, fps=30, title="ELMSTMAP Complete Editor")
-        pyxel.load("map.pyxres")
+#        pyxel.load("map.pyxres")
+        for i, col in enumerate(MSX2_PALETTE):
+            pyxel.colors[i] = col
+
+
         pyxel.mouse(True)  # マウスカーソルを有効化
 
         try:
@@ -17,6 +41,8 @@ class CompleteMapEditor:
         except FileNotFoundError:
             total_size = HEADER_SIZE + (MAP_WIDTH * MAP_HEIGHT) + (256 * 4)
             self.raw_data = bytearray(total_size)
+
+        self.load_sc5("ELMAPCHR.SC5")
 
         self.mode = 'map'
 
@@ -35,6 +61,28 @@ class CompleteMapEditor:
         self.input_lock_timer = 0
 
         pyxel.run(self.update, self.draw)
+
+    def load_sc5(self, filename):
+        if not os.path.exists(filename):
+#            self.set_message("FILE NOT FOUND")
+            print("FILE NOT FOUND!")
+            return
+        with open(filename, "rb") as f:
+            header = f.read(7)
+            pixel_data = f.read()
+            if header[0] != 0xFE:
+                f.seek(0)
+                pixel_data = f.read()
+            idx = 0
+            for y in range(212):
+                for x in range(0, 256, 2):
+                    if idx < len(pixel_data):
+                        b = pixel_data[idx]
+                        idx += 1
+                        pyxel.images[1].pset(x, y, (b >> 4) & 0x0F)
+                        if x + 1 < 256:
+                            pyxel.images[1].pset(x + 1, y, b & 0x0F)
+
 
     # 上下4bitを入れ替える関数
     def swap_bits(self, val):
