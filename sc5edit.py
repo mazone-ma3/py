@@ -37,7 +37,7 @@ class MSX2OriginalEditor:
     self.cursor_x = 0
     self.cursor_y = 0
 
-    self.filename = ""  # 初期値は空（オリジナル仕様）
+    self.filename = ""
     self.message = "READY"
     self.msg_timer = 0
 
@@ -66,7 +66,6 @@ class MSX2OriginalEditor:
 
     # --- ファイル名入力プロンプトモードの処理 ---
     if self.mode in ["PROMPT_SAVE", "PROMPT_LOAD"]:
-      # ESCキー、または空の状態でENTERを押した場合はキャンセル
       if pyxel.btnp(pyxel.KEY_ESCAPE):
         self.mode = "EDIT"
         self.input_lock = 15
@@ -79,7 +78,6 @@ class MSX2OriginalEditor:
 
       elif pyxel.btnp(pyxel.KEY_RETURN):
         if len(self.filename) == 0:
-          # 名前が空ならキャンセル
           self.mode = "EDIT"
           self.input_lock = 15
           self.set_message("CANCELLED")
@@ -91,30 +89,54 @@ class MSX2OriginalEditor:
           else:
             self.load_sc5(target_file)
             self.set_message(f"LOADED: {target_file}")
-          
+
           self.mode = "EDIT"
           self.input_lock = 15
         return
 
       else:
-        # キーボード入力の拾い上げ (A-Z, 0-9, ピリオド, ハイフン等)
         for key, char in [
-            (pyxel.KEY_A, "A"), (pyxel.KEY_B, "B"), (pyxel.KEY_C, "C"),
-            (pyxel.KEY_D, "D"), (pyxel.KEY_E, "E"), (pyxel.KEY_F, "F"),
-            (pyxel.KEY_G, "G"), (pyxel.KEY_H, "H"), (pyxel.KEY_I, "I"),
-            (pyxel.KEY_J, "J"), (pyxel.KEY_K, "K"), (pyxel.KEY_L, "L"),
-            (pyxel.KEY_M, "M"), (pyxel.KEY_N, "N"), (pyxel.KEY_O, "O"),
-            (pyxel.KEY_P, "P"), (pyxel.KEY_Q, "Q"), (pyxel.KEY_R, "R"),
-            (pyxel.KEY_S, "S"), (pyxel.KEY_T, "T"), (pyxel.KEY_U, "U"),
-            (pyxel.KEY_V, "V"), (pyxel.KEY_W, "W"), (pyxel.KEY_X, "X"),
-            (pyxel.KEY_Y, "Y"), (pyxel.KEY_Z, "Z"),
-            (pyxel.KEY_0, "0"), (pyxel.KEY_1, "1"), (pyxel.KEY_2, "2"),
-            (pyxel.KEY_3, "3"), (pyxel.KEY_4, "4"), (pyxel.KEY_5, "5"),
-            (pyxel.KEY_6, "6"), (pyxel.KEY_7, "7"), (pyxel.KEY_8, "8"),
-            (pyxel.KEY_9, "9"), (pyxel.KEY_PERIOD, "."), (pyxel.KEY_MINUS, "-")
+            (pyxel.KEY_A, "A"),
+            (pyxel.KEY_B, "B"),
+            (pyxel.KEY_C, "C"),
+            (pyxel.KEY_D, "D"),
+            (pyxel.KEY_E, "E"),
+            (pyxel.KEY_F, "F"),
+            (pyxel.KEY_G, "G"),
+            (pyxel.KEY_H, "H"),
+            (pyxel.KEY_I, "I"),
+            (pyxel.KEY_J, "J"),
+            (pyxel.KEY_K, "K"),
+            (pyxel.KEY_L, "L"),
+            (pyxel.KEY_M, "M"),
+            (pyxel.KEY_N, "N"),
+            (pyxel.KEY_O, "O"),
+            (pyxel.KEY_P, "P"),
+            (pyxel.KEY_Q, "Q"),
+            (pyxel.KEY_R, "R"),
+            (pyxel.KEY_S, "S"),
+            (pyxel.KEY_T, "T"),
+            (pyxel.KEY_U, "U"),
+            (pyxel.KEY_V, "V"),
+            (pyxel.KEY_W, "W"),
+            (pyxel.KEY_X, "X"),
+            (pyxel.KEY_Y, "Y"),
+            (pyxel.KEY_Z, "Z"),
+            (pyxel.KEY_0, "0"),
+            (pyxel.KEY_1, "1"),
+            (pyxel.KEY_2, "2"),
+            (pyxel.KEY_3, "3"),
+            (pyxel.KEY_4, "4"),
+            (pyxel.KEY_5, "5"),
+            (pyxel.KEY_6, "6"),
+            (pyxel.KEY_7, "7"),
+            (pyxel.KEY_8, "8"),
+            (pyxel.KEY_9, "9"),
+            (pyxel.KEY_PERIOD, "."),
+            (pyxel.KEY_MINUS, "-"),
         ]:
           if pyxel.btnp(key):
-            if len(self.filename) < 12:  # 最大12文字まで
+            if len(self.filename) < 12:
               self.filename += char
       return
 
@@ -189,11 +211,17 @@ class MSX2OriginalEditor:
       # SPACEで決定・実行
       elif pyxel.btnp(pyxel.KEY_SPACE) and self.input_lock == 0:
         if self.mode == "PUT":
+          # CTRLキーが押されていれば「TPSET（カラー0を透過）」、押されていなければ通常PUT
+          is_transparent = pyxel.btn(pyxel.KEY_CTRL)
           for y in range(self.si):
             for x in range(self.si):
               col = pyxel.images[0].pget(x, y)
+              if is_transparent and col == 0:
+                continue  # 透過時はカラー0を上書きしない
               pyxel.images[1].pset(self.screen_x + x, self.screen_y + y, col)
-          self.set_message("PUT STAMPED! (SPACE:CONT / RET:EXIT)")
+          
+          mode_str = "TPSET (TRANS)" if is_transparent else "PUT"
+          self.set_message(f"{mode_str} STAMPED! (SPACE:CONT / RET:EXIT)")
 
         elif self.mode == "GET":
           for y in range(self.si):
@@ -229,22 +257,22 @@ class MSX2OriginalEditor:
           pyxel.images[0].pset(x, y, self.current_color)
       self.set_message("<BOX> FILLED")
 
-    elif pyxel.btnp(pyxel.KEY_F2):  # PUT
+    elif pyxel.btnp(pyxel.KEY_F2):  # PUT (GRPH代わりのCTRL+SPACEで透過PUT可能)
       self.mode = "PUT"
       self.input_lock = 10
-      self.set_message("<PUT> SPACE:STAMP / RET:EXIT")
+      self.set_message("<PUT> SPACE:STAMP (CTRL+SPACE:TPSET)")
 
     elif pyxel.btnp(pyxel.KEY_F3):  # GET
       self.mode = "GET"
       self.input_lock = 10
       self.set_message("<GET> SPACE:CAPTURE / RET:EXIT")
 
-    elif pyxel.btnp(pyxel.KEY_F4):  # SAVE (空のファイル名から入力を開始)
+    elif pyxel.btnp(pyxel.KEY_F4):  # SAVE
       self.filename = ""
       self.mode = "PROMPT_SAVE"
       self.set_message("INPUT FILENAME & HIT ENTER (EMPTY=CANCEL)")
 
-    elif pyxel.btnp(pyxel.KEY_F5):  # LOAD (空のファイル名から入力を開始)
+    elif pyxel.btnp(pyxel.KEY_F5):  # LOAD
       self.filename = ""
       self.mode = "PROMPT_LOAD"
       self.set_message("INPUT FILENAME & HIT ENTER (EMPTY=CANCEL)")
@@ -314,18 +342,27 @@ class MSX2OriginalEditor:
       for y in range(self.si):
         for x in range(self.si):
           col = pyxel.images[0].pget(x, y)
-          pyxel.rect(x * self.sz, y * self.sz, self.sz, self.sz, col)
+          
+          # カラー0（透明色）の場合は市松模様を描画
+          if col == 0:
+            for py_sub in range(self.sz):
+              for px_sub in range(self.sz):
+                c_check = 1 if ((x * self.sz + px_sub) // 2 + (y * self.sz + py_sub) // 2) % 2 == 0 else 0
+                draw_c = 14 if c_check == 1 else 1
+                pyxel.pset(x * self.sz + px_sub, y * self.sz + py_sub, draw_c)
+          else:
+            pyxel.rect(x * self.sz, y * self.sz, self.sz, self.sz, col)
 
       for i in range(self.si + 1):
-        pyxel.line(0, i * self.sz, limit, i * self.sz, 15)
-        pyxel.line(i * self.sz, 0, i * self.sz, limit, 15)
+        pyxel.line(0, i * self.sz, limit, i * self.sz, 13)
+        pyxel.line(i * self.sz, 0, i * self.sz, limit, 13)
 
       pyxel.rectb(
           self.cursor_x * self.sz,
           self.cursor_y * self.sz,
           self.sz,
           self.sz,
-          8,
+          7,
       )
 
       # 右側原寸プレビュー
@@ -350,8 +387,19 @@ class MSX2OriginalEditor:
 
     # --- 下部ステータス（212?248ドット目） ---
     pyxel.rect(0, 212, 256, 36, 1)
+
     for i in range(16):
-      pyxel.rect(i * 12, 214, 10, 8, i)
+      px = i * 12
+      py = 214
+      if i == 0:
+        for sub_y in range(8):
+          for sub_x in range(10):
+            c_check = 1 if (sub_x // 2 + sub_y // 2) % 2 == 0 else 0
+            d_col = 14 if c_check == 1 else 1
+            pyxel.pset(px + sub_x, py + sub_y, d_col)
+        pyxel.text(px + 2, py + 1, "0", 7)
+      else:
+        pyxel.rect(px, py, 10, 8, i)
 
     pyxel.rectb(self.current_color * 12, 214, 10, 8, 7)
 
