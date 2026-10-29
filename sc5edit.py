@@ -25,7 +25,6 @@ MSX2_PALETTE = [
 class MSX2OriginalEditor:
 
   def __init__(self):
-    # ウィンドウ高さを 248 に変更（上部SCREEN5:212ドット ＋ 下部メニュー:36ドット）
     pyxel.init(256, 248, title="MSX2 SCREEN5 Editor (Pyxel)", fps=60)
     for i, col in enumerate(MSX2_PALETTE):
       pyxel.colors[i] = col
@@ -38,18 +37,17 @@ class MSX2OriginalEditor:
     self.cursor_x = 0
     self.cursor_y = 0
 
-    self.filename = "NEWV3"
+    self.filename = ""  # 初期値は空（オリジナル仕様）
     self.message = "READY"
     self.msg_timer = 0
 
-    # モード管理: "EDIT", "PUT", "GET", "SWAP_1", "SWAP_2"
+    # モード管理: "EDIT", "PUT", "GET", "SWAP_1", "SWAP_2", "PROMPT_SAVE", "PROMPT_LOAD"
     self.mode = "EDIT"
     self.screen_x = 0
     self.screen_y = 0
     self.swap_x1 = 0
     self.swap_y1 = 0
 
-    # 誤爆防止用の入力ロックフレームカウンター
     self.input_lock = 0
 
     pyxel.run(self.update, self.draw)
@@ -65,6 +63,60 @@ class MSX2OriginalEditor:
   def update(self):
     if self.input_lock > 0:
       self.input_lock -= 1
+
+    # --- ファイル名入力プロンプトモードの処理 ---
+    if self.mode in ["PROMPT_SAVE", "PROMPT_LOAD"]:
+      # ESCキー、または空の状態でENTERを押した場合はキャンセル
+      if pyxel.btnp(pyxel.KEY_ESCAPE):
+        self.mode = "EDIT"
+        self.input_lock = 15
+        self.set_message("CANCELLED")
+        return
+
+      if pyxel.btnp(pyxel.KEY_BACKSPACE):
+        if len(self.filename) > 0:
+          self.filename = self.filename[:-1]
+
+      elif pyxel.btnp(pyxel.KEY_RETURN):
+        if len(self.filename) == 0:
+          # 名前が空ならキャンセル
+          self.mode = "EDIT"
+          self.input_lock = 15
+          self.set_message("CANCELLED")
+        else:
+          target_file = self.filename + ".sc5"
+          if self.mode == "PROMPT_SAVE":
+            self.save_sc5(target_file)
+            self.set_message(f"SAVED: {target_file}")
+          else:
+            self.load_sc5(target_file)
+            self.set_message(f"LOADED: {target_file}")
+          
+          self.mode = "EDIT"
+          self.input_lock = 15
+        return
+
+      else:
+        # キーボード入力の拾い上げ (A-Z, 0-9, ピリオド, ハイフン等)
+        for key, char in [
+            (pyxel.KEY_A, "A"), (pyxel.KEY_B, "B"), (pyxel.KEY_C, "C"),
+            (pyxel.KEY_D, "D"), (pyxel.KEY_E, "E"), (pyxel.KEY_F, "F"),
+            (pyxel.KEY_G, "G"), (pyxel.KEY_H, "H"), (pyxel.KEY_I, "I"),
+            (pyxel.KEY_J, "J"), (pyxel.KEY_K, "K"), (pyxel.KEY_L, "L"),
+            (pyxel.KEY_M, "M"), (pyxel.KEY_N, "N"), (pyxel.KEY_O, "O"),
+            (pyxel.KEY_P, "P"), (pyxel.KEY_Q, "Q"), (pyxel.KEY_R, "R"),
+            (pyxel.KEY_S, "S"), (pyxel.KEY_T, "T"), (pyxel.KEY_U, "U"),
+            (pyxel.KEY_V, "V"), (pyxel.KEY_W, "W"), (pyxel.KEY_X, "X"),
+            (pyxel.KEY_Y, "Y"), (pyxel.KEY_Z, "Z"),
+            (pyxel.KEY_0, "0"), (pyxel.KEY_1, "1"), (pyxel.KEY_2, "2"),
+            (pyxel.KEY_3, "3"), (pyxel.KEY_4, "4"), (pyxel.KEY_5, "5"),
+            (pyxel.KEY_6, "6"), (pyxel.KEY_7, "7"), (pyxel.KEY_8, "8"),
+            (pyxel.KEY_9, "9"), (pyxel.KEY_PERIOD, "."), (pyxel.KEY_MINUS, "-")
+        ]:
+          if pyxel.btnp(key):
+            if len(self.filename) < 12:  # 最大12文字まで
+              self.filename += char
+      return
 
     # --- 1. サイズ変更 ([1]?[3]キー) ---
     if pyxel.btnp(pyxel.KEY_1):
@@ -187,13 +239,15 @@ class MSX2OriginalEditor:
       self.input_lock = 10
       self.set_message("<GET> SPACE:CAPTURE / RET:EXIT")
 
-    elif pyxel.btnp(pyxel.KEY_F4):  # SAVE
-      self.save_sc5(self.filename + ".sc5")
-      self.set_message("<SAVE> SAVED")
+    elif pyxel.btnp(pyxel.KEY_F4):  # SAVE (空のファイル名から入力を開始)
+      self.filename = ""
+      self.mode = "PROMPT_SAVE"
+      self.set_message("INPUT FILENAME & HIT ENTER (EMPTY=CANCEL)")
 
-    elif pyxel.btnp(pyxel.KEY_F5):  # LOAD
-      self.load_sc5(self.filename + ".sc5")
-      self.set_message("<LOAD> LOADED")
+    elif pyxel.btnp(pyxel.KEY_F5):  # LOAD (空のファイル名から入力を開始)
+      self.filename = ""
+      self.mode = "PROMPT_LOAD"
+      self.set_message("INPUT FILENAME & HIT ENTER (EMPTY=CANCEL)")
 
     elif pyxel.btnp(pyxel.KEY_F6):  # R-L TURN
       for y in range(self.si):
@@ -285,7 +339,7 @@ class MSX2OriginalEditor:
           pyxel.pset(rx + x, ry + y, c)
 
     else:
-      # 全画面（256x212）を完全に表示
+      # 全画面（256x212）を表示
       pyxel.blt(0, 0, 1, 0, 0, 256, 212)
       box_col = (
           11
@@ -294,7 +348,7 @@ class MSX2OriginalEditor:
       )
       pyxel.rectb(self.screen_x, self.screen_y, self.si, self.si, box_col)
 
-    # --- 下部ステータス（y=212以降に配置して画面を隠さないように修正） ---
+    # --- 下部ステータス（212?248ドット目） ---
     pyxel.rect(0, 212, 256, 36, 1)
     for i in range(16):
       pyxel.rect(i * 12, 214, 10, 8, i)
@@ -318,6 +372,14 @@ class MSX2OriginalEditor:
 
     pyxel.text(130, 225, "F1:BOX F2:PUT F3:GET F4:SAV F5:LOD", 6)
     pyxel.text(130, 237, "F6:R-L F7:U-D F8:SWAP [1-3]SIZE", 6)
+
+    # --- プロンプト表示（ファイル名入力中） ---
+    if self.mode in ["PROMPT_SAVE", "PROMPT_LOAD"]:
+      pyxel.rect(40, 90, 176, 40, 1)
+      pyxel.rectb(40, 90, 176, 40, 7)
+      title_str = "SAVE FILE NAME:" if self.mode == "PROMPT_SAVE" else "LOAD FILE NAME:"
+      pyxel.text(48, 96, title_str, 11)
+      pyxel.text(48, 110, f"> {self.filename}_", 7)
 
 
 MSX2OriginalEditor()
